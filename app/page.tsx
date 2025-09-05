@@ -1,13 +1,14 @@
+'use client'
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, Play, Star, Clock, Filter, User, Settings, Bell } from "lucide-react";
-import heroImage from "@/assets/hero-bg.jpg";
-import contentImage1 from "@/assets/content-1.jpg";
+import Image from 'next/image';
 
-const Index = () => {
+export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const categories = [
@@ -19,7 +20,7 @@ const Index = () => {
       id: 1,
       title: "Featured Series",
       description: "An exclusive premium series with stunning visuals and compelling storylines",
-      image: contentImage1,
+      image: "/content-1.jpg",
       rating: 4.8,
       duration: "45 min",
       category: "Premium"
@@ -28,7 +29,7 @@ const Index = () => {
       id: 2,
       title: "Popular Collection",
       description: "Most watched content this month",
-      image: contentImage1,
+      image: "/content-1.jpg",
       rating: 4.6,
       duration: "30 min",
       category: "Trending"
@@ -37,20 +38,21 @@ const Index = () => {
       id: 3,
       title: "New Release",
       description: "Just added to our platform",
-      image: contentImage1,
+      image: "/content-1.jpg",
       rating: 4.9,
       duration: "60 min",
       category: "New"
     }
   ];
 
+  // Create deterministic content grid to avoid hydration mismatches
   const contentGrid = Array.from({ length: 12 }, (_, i) => ({
     id: i + 4,
     title: `Content ${i + 1}`,
-    image: contentImage1,
-    rating: (4.0 + Math.random()).toFixed(1),
-    duration: `${20 + Math.floor(Math.random() * 40)} min`,
-    category: categories[Math.floor(Math.random() * categories.length)]
+    image: "/content-1.jpg",
+    rating: (4.0 + (i * 0.1) % 1).toFixed(1),
+    duration: `${20 + (i * 5) % 40} min`,
+    category: categories[i % categories.length]
   }));
 
   return (
@@ -100,10 +102,12 @@ const Index = () => {
       {/* Hero Section */}
       <section className="relative h-[70vh] overflow-hidden">
         <div className="absolute inset-0">
-          <img 
-            src={heroImage} 
+          <Image 
+            src="/hero-bg.jpg"
             alt="Featured content" 
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
+            priority
           />
           <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/50 to-transparent" />
         </div>
@@ -139,9 +143,11 @@ const Index = () => {
           {featuredContent.map((item) => (
             <Card key={item.id} className="group cursor-pointer overflow-hidden hover:shadow-lg transition-all duration-300">
               <div className="relative">
-                <img 
-                  src={item.image} 
+                <Image 
+                  src={item.image}
                   alt={item.title}
+                  width={400}
+                  height={192}
                   className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
@@ -180,9 +186,11 @@ const Index = () => {
           {contentGrid.map((item) => (
             <Card key={item.id} className="group cursor-pointer overflow-hidden hover:shadow-md transition-all duration-300">
               <div className="relative">
-                <img 
-                  src={item.image} 
+                <Image 
+                  src={item.image}
                   alt={item.title}
+                  width={200}
+                  height={160}
                   className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
@@ -254,6 +262,4 @@ const Index = () => {
       </footer>
     </div>
   );
-};
-
-export default Index;
+}
