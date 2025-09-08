@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Play, Star, Clock, Filter, User, Settings, Bell } from "lucide-react";
+import { Play, Star, Clock } from "lucide-react";
 import Image from 'next/image';
+import Header from '@/components/layout/Header';
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -58,53 +58,18 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-8">
-              <h1 className="text-2xl font-bold text-primary">StreamVault</h1>
-              <nav className="hidden md:flex space-x-6">
-                {categories.map((category) => (
-                  <Button key={category} variant="ghost" className="text-sm">
-                    {category}
-                  </Button>
-                ))}
-              </nav>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="relative max-w-sm">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  placeholder="Search content..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Button variant="ghost" size="icon">
-                <Filter className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon">
-                <Bell className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon">
-                <User className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon">
-                <Settings className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header 
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        categories={categories}
+      />
 
       {/* Hero Section */}
       <section className="relative h-[70vh] overflow-hidden">
         <div className="absolute inset-0">
           <Image 
-            src="/hero-bg.jpg"
-            alt="Featured content" 
+            src="/girl-bg.png"
+            alt="High quality AI attractive girl background" 
             fill
             className="object-cover"
             priority
