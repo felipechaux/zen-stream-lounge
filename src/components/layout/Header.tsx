@@ -36,6 +36,11 @@ export default function Header({ searchQuery, setSearchQuery, categories }: Head
               <h1 className="text-2xl font-bold text-primary cursor-pointer">StreamVault</h1>
             </Link>
             <nav className="hidden md:flex space-x-6">
+              <Link href="/streaming">
+                <Button variant="ghost" className="text-sm">
+                  Live Stream
+                </Button>
+              </Link>
               {categories.map((category) => (
                 <Button key={category} variant="ghost" className="text-sm">
                   {category}
