@@ -68,10 +68,10 @@ export const useStreaming = ({ appId, token }: UseStreamingProps) => {
     // Actions
     joinChannel,
     leaveChannel,
-    toggleVideo,
-    toggleAudio,
-    
-    // Client
-    client,
-  };
+
+    // Placeholder for Ant Media Server integration
+    export const useStreaming = () => {
+      // Implement Ant Media Server hooks here
+      return {};
+    };
 };

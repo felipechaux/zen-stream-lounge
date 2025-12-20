@@ -1,4 +1,6 @@
-import StreamingRoom from '@/components/streaming/StreamingRoom';
+import dynamic from 'next/dynamic';
+
+import StreamingRoomClient from "./StreamingRoomClient";
 
 export default function StreamingPage() {
   // You'll need to get your Agora App ID from the Agora Console
@@ -15,7 +17,7 @@ export default function StreamingPage() {
           </p>
         </div>
         
-        <StreamingRoom appId={AGORA_APP_ID} />
+        <StreamingRoomClient appId={AGORA_APP_ID} />
         
         <div className="mt-12 text-center text-sm text-muted-foreground">
           <p>
