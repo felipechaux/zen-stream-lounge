@@ -62,29 +62,29 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         {/* Back button */}
         <Link
           href="/"
-          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="inline-flex items-center text-sm text-zinc-400 hover:text-amber-500 transition-colors"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to StreamVault
+          Back to ZenStream Lounge
         </Link>
 
-        <Card className="shadow-lg">
+        <Card className="shadow-2xl bg-zinc-900 border-zinc-800">
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-            <CardDescription>
-              Sign in to your StreamVault account to continue
+            <CardTitle className="text-2xl font-bold text-white">Welcome back</CardTitle>
+            <CardDescription className="text-zinc-400">
+              Sign in to your <span className="text-amber-500 font-medium">ZenStream Lounge</span> account
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 {error && (
-                  <Alert variant="destructive">
+                  <Alert variant="destructive" className="bg-red-900/20 border-red-900 text-red-200">
                     <AlertDescription>{error}</AlertDescription>
                   </Alert>
                 )}
@@ -94,13 +94,14 @@ export default function LoginForm() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel className="text-zinc-300">Email</FormLabel>
                       <FormControl>
                         <Input
                           type="email"
                           placeholder="Enter your email"
                           {...field}
                           disabled={isLoading}
+                          className="bg-zinc-950 border-zinc-800 text-white focus:ring-amber-500/50 focus:border-amber-500"
                         />
                       </FormControl>
                       <FormMessage />
@@ -113,7 +114,7 @@ export default function LoginForm() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
+                      <FormLabel className="text-zinc-300">Password</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input
@@ -121,12 +122,13 @@ export default function LoginForm() {
                             placeholder="Enter your password"
                             {...field}
                             disabled={isLoading}
+                            className="bg-zinc-950 border-zinc-800 text-white focus:ring-amber-500/50 focus:border-amber-500 pr-10"
                           />
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-zinc-400 hover:text-white"
                             onClick={() => setShowPassword(!showPassword)}
                             disabled={isLoading}
                           >
@@ -145,7 +147,7 @@ export default function LoginForm() {
 
                 <Button
                   type="submit"
-                  className="w-full"
+                  className="w-full bg-amber-600 hover:bg-amber-500 text-white font-semibold"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -161,11 +163,11 @@ export default function LoginForm() {
             </Form>
 
             <div className="mt-6 text-center">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-zinc-400">
                 Don&apos;t have an account?{' '}
                 <Link
                   href="/signup"
-                  className="font-medium text-primary hover:underline"
+                  className="font-medium text-amber-500 hover:text-amber-400 hover:underline"
                 >
                   Sign up
                 </Link>
@@ -174,7 +176,7 @@ export default function LoginForm() {
           </CardContent>
         </Card>
 
-        <div className="text-center text-xs text-muted-foreground">
+        <div className="text-center text-xs text-zinc-500">
           By signing in, you agree to our Terms of Service and Privacy Policy.
         </div>
       </div>

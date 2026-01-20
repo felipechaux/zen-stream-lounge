@@ -2,68 +2,26 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Play, Star, Clock } from "lucide-react";
+import { Play, Star, MapPin, Users, Heart, Camera } from "lucide-react";
 import Image from 'next/image';
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Header from '@/components/layout/Header';
-import dynamic from "next/dynamic";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import Footer from '@/components/layout/Footer';
+import { MOCK_STREAMERS, Streamer } from "@/data/mockStreamers";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeStreamId, setActiveStreamId] = useState<string | null>(null);
-
-  // Import dynamically to avoid SSR issues with WebRTC
-  const LiveStreamPlayer = dynamic(() => import("@/components/streaming/LiveStreamPlayer"), { ssr: false });
-
+  const router = useRouter();
 
   const categories = [
-    "Trending", "New Releases", "Popular", "Premium", "Live", "Categories"
+    "Featured", "Top Rated", "New Models", "Latina", "Blonde", "Ebony", "Asian", "Couples"
   ];
-
-  const featuredContent = [
-    {
-      id: 1,
-      title: "Featured Series",
-      description: "An exclusive premium series with stunning visuals and compelling storylines",
-      image: "/content-1.jpg",
-      rating: 4.8,
-      duration: "45 min",
-      category: "Premium"
-    },
-    {
-      id: 2,
-      title: "Popular Collection",
-      description: "Most watched content this month",
-      image: "/content-1.jpg",
-      rating: 4.6,
-      duration: "30 min",
-      category: "Trending"
-    },
-    {
-      id: 3,
-      title: "New Release",
-      description: "Just added to our platform",
-      image: "/content-1.jpg",
-      rating: 4.9,
-      duration: "60 min",
-      category: "New"
-    }
-  ];
-
-  // Create deterministic content grid to avoid hydration mismatches
-  const contentGrid = Array.from({ length: 12 }, (_, i) => ({
-    id: i + 4,
-    title: `Content ${i + 1}`,
-    image: "/content-1.jpg",
-    rating: (4.0 + (i * 0.1) % 1).toFixed(1),
-    duration: `${20 + (i * 5) % 40} min`,
-    category: categories[i % categories.length]
-  }));
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-zinc-950 text-foreground">
       {/* Header */}
       <Header
         searchQuery={searchQuery}
@@ -71,183 +29,142 @@ export default function HomePage() {
         categories={categories}
       />
 
-      {/* Hero Section */}
-      <section className="relative h-[70vh] overflow-hidden">
+      {/* Hero / Banner Area */}
+      <section className="relative h-[65vh] md:h-[75vh] min-h-[600px] overflow-hidden">
         <div className="absolute inset-0">
           <Image
             src="/girl-bg.png"
-            alt="High quality AI attractive girl background"
+            alt="Premium Live Experience"
             fill
-            className="object-cover"
+            className="object-cover object-top"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/50 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/90 via-zinc-950/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent" />
         </div>
 
-        <div className="relative container mx-auto px-4 h-full flex items-center">
-          <div className="max-w-2xl space-y-6">
-            <Badge variant="secondary" className="text-sm">
-              Featured Premium
+        <div className="relative container mx-auto px-4 h-full flex items-center pb-32 md:pb-40">
+          <div className="max-w-3xl space-y-8 pt-24">
+            <Badge className="bg-amber-500 text-black hover:bg-amber-400 border-none px-4 py-1.5 text-sm font-bold uppercase tracking-wide">
+              Live Now
             </Badge>
-            <h2 className="text-5xl font-bold leading-tight">
-              Exclusive Premium Collection
-            </h2>
-            <p className="text-xl text-muted-foreground">
-              Discover our most exclusive and high-quality content, carefully curated for discerning viewers.
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black leading-tight text-white drop-shadow-2xl">
+              Experience the <br /> <span className="text-amber-500">Intimacy</span>
+            </h1>
+            <p className="text-xl md:text-2xl text-zinc-300 max-w-xl leading-relaxed drop-shadow-md">
+              Interact with the world's most stunning models in real-time. Private shows, exclusive content, and unforgettable moments wait for you.
             </p>
-            <div className="flex items-center space-x-4">
-              <Button size="lg" className="text-lg px-8">
-                <Play className="mr-2 h-5 w-5" />
-                Watch Now
+            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 pt-8">
+              <Button size="lg" className="bg-amber-600 hover:bg-amber-500 text-white border-none text-xl px-10 h-14 rounded-full shadow-xl shadow-amber-900/20 transition-all hover:scale-105">
+                <Camera className="mr-2 h-6 w-6" />
+                Start Watching Free
               </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8">
-                More Info
-              </Button>
+              <Link href="/login">
+                <Button variant="outline" size="lg" className="border-amber-500/50 text-amber-500 hover:bg-amber-950/30 text-xl px-10 h-14 rounded-full backdrop-blur-sm transition-all hover:scale-105">
+                  Join Now
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Featured Content */}
-      <section className="container mx-auto px-4 py-12">
-        <h3 className="text-3xl font-bold mb-8">Featured Content</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {featuredContent.map((item) => (
-            <Card key={item.id} className="group cursor-pointer overflow-hidden hover:shadow-lg transition-all duration-300">
-              <div className="relative">
+      {/* Main Content Area */}
+      <main className="container mx-auto px-4 pb-20 -mt-20 relative z-10 w-full">
+
+        {/* Filters/Tabs */}
+        <Tabs defaultValue="all" className="w-full mb-12">
+          <TabsList className="w-full justify-start overflow-x-auto flex-nowrap bg-zinc-900/90 backdrop-blur-xl p-2 border border-zinc-800/50 rounded-2xl shadow-2xl no-scrollbar snap-x snap-mandatory scroll-pl-6">
+            <TabsTrigger value="all" className="snap-start data-[state=active]:bg-amber-600 data-[state=active]:text-white text-zinc-400 rounded-xl px-6 py-2.5 text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 hover:bg-zinc-800 hover:text-white">All Models</TabsTrigger>
+            <TabsTrigger value="featured" className="snap-start data-[state=active]:bg-amber-600 data-[state=active]:text-white text-zinc-400 rounded-xl px-6 py-2.5 text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 hover:bg-zinc-800 hover:text-white">Featured</TabsTrigger>
+            <TabsTrigger value="new" className="snap-start data-[state=active]:bg-amber-600 data-[state=active]:text-white text-zinc-400 rounded-xl px-6 py-2.5 text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 hover:bg-zinc-800 hover:text-white">New & Hot</TabsTrigger>
+            <TabsTrigger value="vr" className="snap-start data-[state=active]:bg-amber-600 data-[state=active]:text-white text-zinc-400 rounded-xl px-6 py-2.5 text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 hover:bg-zinc-800 hover:text-white">VR Cam</TabsTrigger>
+            <TabsTrigger value="4k" className="snap-start data-[state=active]:bg-amber-600 data-[state=active]:text-white text-zinc-400 rounded-xl px-6 py-2.5 text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 hover:bg-zinc-800 hover:text-white">4K Ultra HD</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {/* Streamers Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {MOCK_STREAMERS.map((streamer) => (
+            <div
+              key={streamer.id}
+              className="group relative bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800 hover:border-amber-500/50 transition-all duration-300 shadow-lg hover:shadow-amber-900/10 cursor-pointer"
+              onClick={() => router.push(`/streaming?mode=play&id=${streamer.id}`)}
+            >
+              {/* Image Container */}
+              <div className="relative aspect-[3/4] overflow-hidden">
                 <Image
-                  src={item.image}
-                  alt={item.title}
-                  width={400}
-                  height={192}
-                  className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                  src={streamer.image}
+                  alt={streamer.name}
+                  fill
+                  className="object-cover group-hover:scale-110 transition-transform duration-500"
                 />
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                  <Button size="lg" variant="secondary">
-                    <Play className="mr-2 h-5 w-5" />
-                    Play
-                  </Button>
+
+                {/* Live Badge */}
+                {streamer.isLive && (
+                  <div className="absolute top-3 left-3 flex items-center space-x-1 bg-red-600 text-white px-2 py-1 rounded text-xs font-bold uppercase animate-pulse">
+                    <span className="w-2 h-2 bg-white rounded-full"></span>
+                    <span>LIVE</span>
+                  </div>
+                )}
+
+                {/* Status Badge */}
+                <div className={`absolute top-3 right-3 px-2 py-1 rounded text-xs font-bold uppercase
+                  ${streamer.status === 'private' ? 'bg-purple-600 text-white' :
+                    streamer.status === 'ticket' ? 'bg-green-600 text-white' :
+                      'bg-zinc-900/80 text-white backdrop-blur-sm'}`}>
+                  {streamer.status === 'ticket' ? 'Ticket Show' : streamer.status}
                 </div>
-                <Badge className="absolute top-2 right-2">
-                  {item.category}
-                </Badge>
+
+                {/* Hover Overlay */}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
+                  <div className="w-16 h-16 rounded-full bg-amber-500/90 flex items-center justify-center shadow-lg shadow-amber-500/50 transform scale-50 group-hover:scale-100 transition-transform duration-300">
+                    <Play className="h-8 w-8 text-white fill-white ml-1" />
+                  </div>
+                </div>
+
+                {/* Preview Info (Bottom of Image) */}
+                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black/80 to-transparent translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                  <h3 className="text-white font-bold text-lg mb-1 flex items-center">
+                    {streamer.name}
+                    {streamer.isPremium && <Star className="h-4 w-4 text-amber-500 fill-amber-500 ml-2" />}
+                  </h3>
+                  <div className="flex items-center justify-between text-zinc-300 text-xs font-medium">
+                    <div className="flex items-center space-x-1">
+                      <MapPin className="h-3 w-3" />
+                      <span>{streamer.location}</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <Users className="h-3 w-3" />
+                      <span>{streamer.viewers.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <CardContent className="p-4">
-                <h4 className="font-semibold text-lg mb-2">{item.title}</h4>
-                <p className="text-muted-foreground text-sm mb-3">{item.description}</p>
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center space-x-2">
-                    <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                    <span>{item.rating}</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <Clock className="h-4 w-4" />
-                    <span>{item.duration}</span>
-                  </div>
+
+              {/* Card Footer */}
+              <div className="p-3 bg-zinc-900 border-t border-zinc-800">
+                <div className="flex flex-wrap gap-2">
+                  {streamer.tags.slice(0, 3).map((tag, i) => (
+                    <span key={i} className="text-[10px] uppercase tracking-wider text-zinc-400 bg-zinc-800 px-2 py-1 rounded-sm border border-zinc-700">
+                      {tag}
+                    </span>
+                  ))}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
-      </section>
 
-      {/* Content Grid */}
-      <section className="container mx-auto px-4 pb-12">
-        <h3 className="text-3xl font-bold mb-8">All Content</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-          {contentGrid.map((item) => (
-            <Card key={item.id} className="group cursor-pointer overflow-hidden hover:shadow-md transition-all duration-300">
-              <div className="relative">
-                <Image
-                  src={item.image}
-                  alt={item.title}
-                  width={200}
-                  height={160}
-                  className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => setActiveStreamId('stream123')}
-                  >
-                    <Play className="h-4 w-4" />
-                  </Button>
-                </div>
-                <Badge variant="secondary" className="absolute top-2 right-2 text-xs">
-                  {item.category}
-                </Badge>
-              </div>
-              <CardContent className="p-3">
-                <h4 className="font-medium text-sm mb-2 truncate">{item.title}</h4>
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <div className="flex items-center space-x-1">
-                    <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                    <span>{item.rating}</span>
-                  </div>
-                  <span>{item.duration}</span>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        {/* Load More */}
+        <div className="mt-12 text-center">
+          <Button variant="outline" size="lg" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white px-8">
+            Load More Models
+          </Button>
         </div>
-      </section>
+      </main>
 
-      {/* Live Stream Dialog */}
-      <Dialog open={!!activeStreamId} onOpenChange={(open) => !open && setActiveStreamId(null)}>
-        <DialogContent className="max-w-4xl bg-black border-zinc-800 p-0 overflow-hidden">
-          <DialogHeader className="p-4 absolute z-10 w-full bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
-            <DialogTitle className="text-white text-shadow">Live Stream</DialogTitle>
-          </DialogHeader>
-          {activeStreamId && (
-            <LiveStreamPlayer streamId={activeStreamId} />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Footer */}
-      <footer className="border-t bg-muted/30 py-8">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <h4 className="font-bold text-lg mb-4">StreamVault</h4>
-              <p className="text-muted-foreground text-sm">
-                Premium streaming platform for exclusive content.
-              </p>
-            </div>
-            <div>
-              <h5 className="font-semibold mb-3">Browse</h5>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>Trending</li>
-                <li>New Releases</li>
-                <li>Categories</li>
-                <li>Premium</li>
-              </ul>
-            </div>
-            <div>
-              <h5 className="font-semibold mb-3">Account</h5>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>Profile</li>
-                <li>Settings</li>
-                <li>Subscription</li>
-                <li>History</li>
-              </ul>
-            </div>
-            <div>
-              <h5 className="font-semibold mb-3">Support</h5>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>Help Center</li>
-                <li>Contact</li>
-                <li>Privacy</li>
-                <li>Terms</li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t pt-6 mt-6 text-center text-sm text-muted-foreground">
-            © 2024 StreamVault. All rights reserved.
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

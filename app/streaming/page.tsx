@@ -5,7 +5,9 @@ import { useSearchParams } from 'next/navigation';
 import AntMediaProvider from '@/components/streaming/AntMediaProvider';
 import OneToOneCall from '@/components/streaming/OneToOneCall';
 import Broadcaster from '@/components/streaming/Broadcaster';
-import Player from '@/components/streaming/Player';
+// Dynamically import LiveStreamPlayer to avoid SSR issues with WebRTC
+import dynamic from 'next/dynamic';
+const LiveStreamPlayer = dynamic(() => import('@/components/streaming/LiveStreamPlayer'), { ssr: false });
 
 function AntMediaContent() {
     const searchParams = useSearchParams();
@@ -34,31 +36,31 @@ function AntMediaContent() {
 
     return (
         <div className="min-h-screen bg-black text-white p-8">
-            <header className="mb-8 border-b border-gray-800 pb-4">
-                <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-orange-500">
-                    Zen Stream x Ant Media
+            <header className="mb-12 border-b border-zinc-800 pb-6">
+                <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-orange-500">
+                    ZenStream Lounge <span className="text-white text-2xl font-normal ml-2 opacity-50">x Ant Media</span>
                 </h1>
-                <p className="text-gray-400 mt-2">
-                    Demonstrating 1-to-1 Video Calls and 1-to-Many Live Broadcasting
+                <p className="text-zinc-400 mt-3 text-lg">
+                    Demonstrating Real-Time Streaming Capabilities
                 </p>
             </header>
 
-            <div className="flex gap-4 mb-8 justify-center">
+            <div className="flex flex-wrap gap-4 mb-12 justify-center">
                 <button
                     onClick={() => setMode('broadcast')}
-                    className={`px-4 py-2 rounded-full border ${mode === 'broadcast' ? 'bg-white text-black border-white' : 'border-gray-600 hover:border-gray-400'}`}
+                    className={`px-6 py-2.5 rounded-full border transition-all font-medium ${mode === 'broadcast' ? 'bg-amber-600 text-white border-amber-600 shadow-lg shadow-amber-900/20' : 'border-zinc-700 text-zinc-400 hover:border-amber-500/50 hover:text-amber-500'}`}
                 >
                     Start Broadcast
                 </button>
                 <button
                     onClick={() => setMode('play')}
-                    className={`px-4 py-2 rounded-full border ${mode === 'play' ? 'bg-white text-black border-white' : 'border-gray-600 hover:border-gray-400'}`}
+                    className={`px-6 py-2.5 rounded-full border transition-all font-medium ${mode === 'play' ? 'bg-amber-600 text-white border-amber-600 shadow-lg shadow-amber-900/20' : 'border-zinc-700 text-zinc-400 hover:border-amber-500/50 hover:text-amber-500'}`}
                 >
                     Watch Stream
                 </button>
                 <button
                     onClick={() => setMode('p2p')}
-                    className={`px-4 py-2 rounded-full border ${mode === 'p2p' ? 'bg-white text-black border-white' : 'border-gray-600 hover:border-gray-400'}`}
+                    className={`px-6 py-2.5 rounded-full border transition-all font-medium ${mode === 'p2p' ? 'bg-amber-600 text-white border-amber-600 shadow-lg shadow-amber-900/20' : 'border-zinc-700 text-zinc-400 hover:border-amber-500/50 hover:text-amber-500'}`}
                 >
                     1-to-1 Video Call
                 </button>
@@ -71,26 +73,22 @@ function AntMediaContent() {
                     </AntMediaProvider>
                 )}
 
+                {/* Use the stylized LiveStreamPlayer for playback */}
                 {mode === 'play' && (
-                    <AntMediaProvider key="play" role="player">
-                        <Player />
-                    </AntMediaProvider>
+                    <div className="w-full max-w-4xl mx-auto">
+                        {userId ? (
+                            <LiveStreamPlayer streamId={userId} />
+                        ) : (
+                            <div className="text-center p-12 bg-zinc-900 rounded-xl border border-zinc-800">
+                                <p className="text-zinc-400">No stream ID provided</p>
+                            </div>
+                        )}
+                    </div>
                 )}
 
                 {mode === 'p2p' && (
                     <AntMediaProvider key="p2p" role="p2p">
                         <div className="space-y-4">
-                            <div className="p-4 bg-gray-900 rounded-lg text-sm text-gray-400">
-                                <p><strong>To test P2P:</strong> Open this page in two separate tabs.</p>
-                                <ul className="list-disc ml-4 mt-2">
-                                    <li>Tab 1: Use ID <code>user1</code> and Peer <code>user2</code></li>
-                                    <li>Tab 2: Use ID <code>user2</code> and Peer <code>user1</code></li>
-                                </ul>
-                                <div className="mt-4 flex gap-4 items-center">
-                                    <span>My ID: <strong>{userId}</strong></span>
-                                    <span>Peer ID: <strong>{peerId}</strong></span>
-                                </div>
-                            </div>
                             <OneToOneCall streamId={userId} peerStreamId={peerId} />
                         </div>
                     </AntMediaProvider>

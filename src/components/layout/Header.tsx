@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Search, Filter, User, Settings, Bell, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,7 +33,9 @@ export default function Header({ searchQuery, setSearchQuery, categories }: Head
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-8">
             <Link href="/">
-              <h1 className="text-2xl font-bold text-primary cursor-pointer">StreamVault</h1>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent cursor-pointer">
+                ZenStream Lounge
+              </h1>
             </Link>
             <nav className="hidden md:flex space-x-6">
               <Link href="/streaming">
@@ -48,7 +50,7 @@ export default function Header({ searchQuery, setSearchQuery, categories }: Head
               ))}
             </nav>
           </div>
-          
+
           <div className="flex items-center space-x-4">
             <div className="relative max-w-sm">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -62,7 +64,7 @@ export default function Header({ searchQuery, setSearchQuery, categories }: Head
             <Button variant="ghost" size="icon">
               <Filter className="h-4 w-4" />
             </Button>
-            
+
             {/* Show different buttons based on authentication state */}
             {loading ? (
               <Button variant="ghost" size="icon" disabled>
@@ -73,7 +75,7 @@ export default function Header({ searchQuery, setSearchQuery, categories }: Head
                 <Button variant="ghost" size="icon">
                   <Bell className="h-4 w-4" />
                 </Button>
-                
+
                 {/* User dropdown menu */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

@@ -8,7 +8,7 @@ import QueryProvider from './providers'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'StreamVault - Premium Streaming Platform',
+  title: 'ZenStream Lounge - Premium Streaming Platform',
   description: 'Premium streaming platform for exclusive content.',
 }
 
