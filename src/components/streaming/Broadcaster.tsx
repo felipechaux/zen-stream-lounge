@@ -64,15 +64,7 @@ export default function Broadcaster() {
                         </button>
                     ) : (
                         <div className="flex gap-4">
-                            <a
-                                href={`/ant-media?mode=play&id=${streamId}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg font-semibold flex items-center gap-2"
-                            >
-                                <span>Test Player (New Tab)</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                            </a>
+
                             <button
                                 onClick={handleStopBroadcast}
                                 className="bg-red-600 hover:bg-red-700 px-6 py-2 rounded-lg font-semibold"
@@ -86,7 +78,7 @@ export default function Broadcaster() {
 
             {isPublishing && (
                 <div className="mt-4 p-4 bg-yellow-900/30 border border-yellow-700/50 rounded-lg text-sm text-yellow-200">
-                    <strong>Tip:</strong> Copy your Stream ID <code>{streamId}</code> and click &quot;Test Player&quot; to watch yourself in a new tab. Staying in this tab keeps the broadcast live!
+                    <strong>Tip:</strong> Copy your Stream ID <code>{streamId}</code> to share or watch in another tab. Staying in this tab keeps the broadcast live!
                 </div>
             )}
 
