@@ -25,7 +25,7 @@ export default function Footer() {
                             ZenStream Lounge
                         </h3>
                         <p className="text-zinc-400 text-sm leading-relaxed">
-                            The world's premier destination for exclusive live entertainment. Experience the difference of true premium quality.
+                            The world&apos;s premier destination for exclusive live entertainment. Experience the difference of true premium quality.
                         </p>
                         <div className="flex space-x-4 pt-4">
                             <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-amber-400 hover:bg-zinc-900">

@@ -27,7 +27,7 @@ export default function CookiePolicyPage() {
                         <h2 className="text-2xl font-semibold text-white mb-4">1. Introduction</h2>
                         <p className="leading-relaxed">
                             Welcome to ZenStream Lounge. This Cookie Policy explains how we use cookies and similar technologies
-                            (collectively, "Cookies") when you visit our website. As a premium streaming platform, we use these technologies
+                            (collectively, &quot;Cookies&quot;) when you visit our website. As a premium streaming platform, we use these technologies
                             to ensure the functionality of our high-definition video services, including real-time streaming via Ant Media Server.
                         </p>
                     </section>

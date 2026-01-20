@@ -52,7 +52,7 @@ export default function HomePage() {
               Experience the <br /> <span className="text-amber-500">Intimacy</span>
             </h1>
             <p className="text-xl md:text-2xl text-zinc-300 max-w-xl leading-relaxed drop-shadow-md">
-              Interact with the world's most stunning models in real-time. Private shows, exclusive content, and unforgettable moments wait for you.
+              Interact with the world&apos;s most stunning models in real-time. Private shows, exclusive content, and unforgettable moments wait for you.
             </p>
             <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 pt-8">
               <Button size="lg" className="bg-amber-600 hover:bg-amber-500 text-white border-none text-xl px-10 h-14 rounded-full shadow-xl shadow-amber-900/20 transition-all hover:scale-105">

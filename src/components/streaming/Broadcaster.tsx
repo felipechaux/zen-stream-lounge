@@ -86,7 +86,7 @@ export default function Broadcaster() {
 
             {isPublishing && (
                 <div className="mt-4 p-4 bg-yellow-900/30 border border-yellow-700/50 rounded-lg text-sm text-yellow-200">
-                    <strong>Tip:</strong> Copy your Stream ID <code>{streamId}</code> and click "Test Player" to watch yourself in a new tab. Staying in this tab keeps the broadcast live!
+                    <strong>Tip:</strong> Copy your Stream ID <code>{streamId}</code> and click &quot;Test Player&quot; to watch yourself in a new tab. Staying in this tab keeps the broadcast live!
                 </div>
             )}
 
