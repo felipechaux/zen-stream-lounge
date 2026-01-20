@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import QueryProvider from './providers'
+import CookieConsent from '@/components/layout/CookieConsent';
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -25,6 +26,7 @@ export default function RootLayout({
             <Toaster />
             <Sonner />
             {children}
+            <CookieConsent />
           </TooltipProvider>
         </QueryProvider>
       </body>
