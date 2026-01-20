@@ -27,7 +27,7 @@ const signupSchema = z.object({
     .string()
     .min(1, 'Please confirm your password'),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
+  message: "Passwords don&apos;t match",
   path: ["confirmPassword"],
 })
 
@@ -57,7 +57,7 @@ export default function SignupForm() {
 
     try {
       const { error } = await signUp(values.email, values.password)
-      
+
       if (error) {
         setError(error.message)
       } else {
@@ -78,7 +78,7 @@ export default function SignupForm() {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">Check your email</CardTitle>
             <CardDescription>
-              We've sent you a confirmation link to complete your registration.
+              We&apos;ve sent you a confirmation link to complete your registration.
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center space-y-4">
@@ -100,7 +100,7 @@ export default function SignupForm() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         {/* Back button */}
-        <Link 
+        <Link
           href="/"
           className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
@@ -233,8 +233,8 @@ export default function SignupForm() {
             <div className="mt-6 text-center">
               <p className="text-sm text-muted-foreground">
                 Already have an account?{' '}
-                <Link 
-                  href="/login" 
+                <Link
+                  href="/login"
                   className="font-medium text-primary hover:underline"
                 >
                   Sign in

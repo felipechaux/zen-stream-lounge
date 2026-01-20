@@ -7,9 +7,16 @@ import { Badge } from "@/components/ui/badge";
 import { Play, Star, Clock } from "lucide-react";
 import Image from 'next/image';
 import Header from '@/components/layout/Header';
+import dynamic from "next/dynamic";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeStreamId, setActiveStreamId] = useState<string | null>(null);
+
+  // Import dynamically to avoid SSR issues with WebRTC
+  const LiveStreamPlayer = dynamic(() => import("@/components/streaming/LiveStreamPlayer"), { ssr: false });
+
 
   const categories = [
     "Trending", "New Releases", "Popular", "Premium", "Live", "Categories"
@@ -58,7 +65,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <Header 
+      <Header
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         categories={categories}
@@ -67,16 +74,16 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="relative h-[70vh] overflow-hidden">
         <div className="absolute inset-0">
-          <Image 
+          <Image
             src="/girl-bg.png"
-            alt="High quality AI attractive girl background" 
+            alt="High quality AI attractive girl background"
             fill
             className="object-cover"
             priority
           />
           <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/50 to-transparent" />
         </div>
-        
+
         <div className="relative container mx-auto px-4 h-full flex items-center">
           <div className="max-w-2xl space-y-6">
             <Badge variant="secondary" className="text-sm">
@@ -108,7 +115,7 @@ export default function HomePage() {
           {featuredContent.map((item) => (
             <Card key={item.id} className="group cursor-pointer overflow-hidden hover:shadow-lg transition-all duration-300">
               <div className="relative">
-                <Image 
+                <Image
                   src={item.image}
                   alt={item.title}
                   width={400}
@@ -151,7 +158,7 @@ export default function HomePage() {
           {contentGrid.map((item) => (
             <Card key={item.id} className="group cursor-pointer overflow-hidden hover:shadow-md transition-all duration-300">
               <div className="relative">
-                <Image 
+                <Image
                   src={item.image}
                   alt={item.title}
                   width={200}
@@ -159,7 +166,11 @@ export default function HomePage() {
                   className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                  <Button size="sm" variant="secondary">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setActiveStreamId('stream123')}
+                  >
                     <Play className="h-4 w-4" />
                   </Button>
                 </div>
@@ -181,6 +192,18 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* Live Stream Dialog */}
+      <Dialog open={!!activeStreamId} onOpenChange={(open) => !open && setActiveStreamId(null)}>
+        <DialogContent className="max-w-4xl bg-black border-zinc-800 p-0 overflow-hidden">
+          <DialogHeader className="p-4 absolute z-10 w-full bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+            <DialogTitle className="text-white text-shadow">Live Stream</DialogTitle>
+          </DialogHeader>
+          {activeStreamId && (
+            <LiveStreamPlayer streamId={activeStreamId} />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Footer */}
       <footer className="border-t bg-muted/30 py-8">

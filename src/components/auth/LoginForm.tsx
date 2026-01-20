@@ -48,7 +48,7 @@ export default function LoginForm() {
 
     try {
       const { error } = await signIn(values.email, values.password)
-      
+
       if (error) {
         setError(error.message)
       } else {
@@ -65,7 +65,7 @@ export default function LoginForm() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         {/* Back button */}
-        <Link 
+        <Link
           href="/"
           className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
@@ -162,9 +162,9 @@ export default function LoginForm() {
 
             <div className="mt-6 text-center">
               <p className="text-sm text-muted-foreground">
-                Don't have an account?{' '}
-                <Link 
-                  href="/signup" 
+                Don&apos;t have an account?{' '}
+                <Link
+                  href="/signup"
                   className="font-medium text-primary hover:underline"
                 >
                   Sign up
