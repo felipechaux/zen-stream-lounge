@@ -24,13 +24,18 @@ function AntMediaContent() {
 
     // For P2P demo - use state to avoid mismatch as well, or just suppress if they are just display
     // But better to use effects if they drive logic or are displayed
-    const [userId, setUserId] = useState('user1');
+    // For P2P demo
+    const [userId, setUserId] = useState('');
+    const [inputId, setInputId] = useState('');
     const [peerId, setPeerId] = useState('user2');
 
     React.useEffect(() => {
         const idParam = searchParams.get('id');
         const peerParam = searchParams.get('peer');
-        if (idParam) setUserId(idParam);
+        if (idParam) {
+            setUserId(idParam);
+            setInputId(idParam);
+        }
         if (peerParam) setPeerId(peerParam);
     }, [searchParams]);
 
@@ -75,12 +80,33 @@ function AntMediaContent() {
 
                 {/* Use the stylized LiveStreamPlayer for playback */}
                 {mode === 'play' && (
-                    <div className="w-full max-w-4xl mx-auto">
+                    <div className="w-full max-w-4xl mx-auto space-y-6">
+                        <div className="flex gap-2 justify-center max-w-md mx-auto">
+                            <input
+                                type="text"
+                                value={inputId}
+                                onChange={(e) => setInputId(e.target.value)}
+                                placeholder="Enter Stream ID to Watch"
+                                className="flex-1 bg-zinc-900 border border-zinc-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:border-amber-500"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        setUserId(inputId);
+                                    }
+                                }}
+                            />
+                            <button
+                                onClick={() => setUserId(inputId)}
+                                className="bg-amber-600 hover:bg-amber-500 text-white px-6 py-2 rounded-lg font-bold transition-colors"
+                            >
+                                Play
+                            </button>
+                        </div>
+
                         {userId ? (
                             <LiveStreamPlayer streamId={userId} />
                         ) : (
-                            <div className="text-center p-12 bg-zinc-900 rounded-xl border border-zinc-800">
-                                <p className="text-zinc-400">No stream ID provided</p>
+                            <div className="text-center p-12 bg-zinc-900/50 rounded-xl border border-zinc-800/50">
+                                <p className="text-zinc-400">Enter a Stream ID above to start watching</p>
                             </div>
                         )}
                     </div>
