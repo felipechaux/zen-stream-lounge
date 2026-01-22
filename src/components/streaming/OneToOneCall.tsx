@@ -119,7 +119,7 @@ const PlayerSection = ({
                     className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
                     disabled={isPlaying}
                 />
-                <p className="text-xs text-gray-500 mt-1">Enter peer's ID to connect</p>
+                <p className="text-xs text-gray-500 mt-1">Enter peer&apos;s ID to connect</p>
             </div>
 
             <div className="aspect-video bg-black rounded-lg overflow-hidden border border-gray-700 relative mb-4">
