@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, Suspense } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import AntMediaProvider from '@/components/streaming/AntMediaProvider';
 import OneToOneCall from '@/components/streaming/OneToOneCall';
@@ -48,6 +49,18 @@ function AntMediaContent() {
                 <p className="text-zinc-400 mt-3 text-lg">
                     Demonstrating Real-Time Streaming Capabilities
                 </p>
+
+                <div className="absolute top-8 right-8">
+                    <Link
+                        href="/"
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white transition-all border border-zinc-700"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path fillRule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z" />
+                        </svg>
+                        Back to Home
+                    </Link>
+                </div>
             </header>
 
             <div className="flex flex-wrap gap-4 mb-12 justify-center">
@@ -113,11 +126,9 @@ function AntMediaContent() {
                 )}
 
                 {mode === 'p2p' && (
-                    <AntMediaProvider key="p2p" role="p2p">
-                        <div className="space-y-4">
-                            <OneToOneCall streamId={userId} peerStreamId={peerId} />
-                        </div>
-                    </AntMediaProvider>
+                    <div className="space-y-4">
+                        <OneToOneCall streamId={userId} peerStreamId={peerId} />
+                    </div>
                 )}
             </div>
         </div>

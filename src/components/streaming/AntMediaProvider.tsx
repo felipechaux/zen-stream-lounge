@@ -79,12 +79,13 @@ export default function AntMediaProvider({
             video: true,
             audio: true,
           };
+          // Use standard publisher constraints for P2P via SFU to avoid m-line conflicts
           sdpConstraints = {
-            OfferToReceiveAudio: true,
-            OfferToReceiveVideo: true,
+            OfferToReceiveAudio: false,
+            OfferToReceiveVideo: false,
           };
         } else {
-          // PUBLISHER (Default): Sends media, mostly doesn't need to receive (unless using return feed, but for broadcast usually OFF)
+          // PUBLISHER (Default): Sends media
           mediaConstraints = {
             video: true,
             audio: true,
@@ -157,6 +158,16 @@ export default function AntMediaProvider({
               } else {
                 setError("Stream is offline or does not exist.");
               }
+            } else if (errorKey === "WebSocketNotConnected") {
+              setMessages(prev => [...prev, `Error: Connection lost. Please refresh or try again.`]);
+              setIsConnected(false);
+              setIsInitialized(false);
+              setError("Connection lost. Please refresh the page.");
+            } else if (errorKey === "notSetRemoteDescription") {
+              setMessages(prev => [...prev, `Error: Negotiation failed. Retrying might help.`]);
+              // Do not disconnect, just warn and ask to retry
+              console.warn("Ant Media Warning: Remote description not set. Synchronization issue.");
+              setError("Connection failed temporarily. Please try pressing Connect again.");
             } else {
               setMessages(prev => [...prev, `Error: ${errorKey} - ${message}`]);
               console.error("Ant Media Error:", errorKey, message);

@@ -1,147 +1,219 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { useAntMedia } from './AntMediaProvider';
+import AntMediaProvider, { useAntMedia } from './AntMediaProvider';
 
 interface OneToOneCallProps {
     streamId: string; // The ID for this user's stream
     peerStreamId: string; // The ID for the peer's stream
 }
 
-export default function OneToOneCall({ streamId, peerStreamId }: OneToOneCallProps) {
-    const { webRTCAdaptor, isInitialized, isConnected, publish, play, stop } = useAntMedia();
-    const [isPublishing, setIsPublishing] = useState(false);
-    const [isPlaying, setIsPlaying] = useState(false);
+// Sub-component for the Publisher (Local Camera) side
+const PublisherSection = ({
+    streamId,
+    setStreamId,
+    isPublishing,
+    setIsPublishing
+}: {
+    streamId: string,
+    setStreamId: (id: string) => void,
+    isPublishing: boolean,
+    setIsPublishing: (v: boolean) => void
+}) => {
+    const { webRTCAdaptor, isConnected, publish, stop, error: antError } = useAntMedia();
     const localVideoRef = useRef<HTMLVideoElement>(null);
-    const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
+    // Effect to attach local stream to video element when ready
     useEffect(() => {
-        if (isInitialized && isConnected) {
-            // Ideally we need to attach media stream to the video element.
-            // The Ant Media SDK often looks for element by ID, but let's see if we can do it via ref or callback.
-            // In the Provider, we set `localVideoId: "localVideo"`. 
-            // For remote video, play() often takes a second argument for remote video element ID.
-        }
-    }, [isInitialized, isConnected]);
-
-    const handleStart = () => {
-        if (!webRTCAdaptor) return;
-
-        // Publish our stream
-        publish(streamId);
-        setIsPublishing(true);
-
-        // Play peer's stream
-        // Note: In a real app, you might valid signal to know when peer is ready, 
-        // but for simple 1-to-1 we can just try to play.
-
-        // We need to tell the adaptor where to play the remote video. 
-        // The play method in context wrapper was simple, let's expand it or access adaptor directly.
-        // However, the adaptor usually takes the video element ID in the play command or relies on `remoteVideoId` in config.
-        // Since we want dynamic, we might need to handle the track events or assign IDs.
-
-        // Attempting to play peer stream on the remote video element
-        // We must ensure the ID matches what the SDK expects or pass it.
-    };
-
-    // To handle the video elements correctly with Ant Media SDK in React:
-    // 1. The local video is often handled by the SDK finding the element by ID 'localVideo'.
-    // 2. The remote video is handled similarly or by `remoteVideoId`.
-    // Problem: Reusability. 
-
-    // Workaround: We will rely on the IDs being passed to the component or hardcoded for this demo,
-    // but we need to ensure they match what we initialized in Provider or passed to methods.
-
-    // Actually, looking at the provider, we initialized with `localVideoId: "localVideo"`.
-    // So we SHOULD have an element with that ID here.
+        // For local stream, we usually need to wait for 'initialized' or just attach user media directly if handled outside
+        // But AntMedia SDK's publish often handles the getUserMedia. 
+        // We'll rely on the adaptor to handle the stream, or simpler: 
+        // The SDK usually attaches the local stream to the element with `localVideoId` automatically upon opening the camera.
+        // We just need to make sure the ID matches.
+    }, [webRTCAdaptor]);
 
     return (
-        <div className="flex flex-col gap-4 p-4 border rounded-lg bg-gray-900 text-white">
-            <h2 className="text-xl font-bold">1-to-1 Call</h2>
-            <div className="flex flex-col md:flex-row gap-4">
-                {/* Local Video */}
-                <div className="flex-1 relative">
-                    <h3 className="absolute top-2 left-2 bg-black/50 px-2 rounded">You ({streamId})</h3>
-                    <video
-                        id="localVideo"
-                        ref={localVideoRef}
-                        autoPlay
-                        muted
-                        playsInline
-                        className="w-full h-64 bg-black object-cover rounded-lg border border-gray-700"
-                    />
-                </div>
-
-                {/* Remote Video */}
-                <div className="flex-1 relative">
-                    <h3 className="absolute top-2 left-2 bg-black/50 px-2 rounded">Peer ({peerStreamId})</h3>
-                    {/* Ant Media SDK often uses a specific ID for remote video or creates elements.
-               If we use the standard play(streamId), it might look for an element or return a stream.
-               Common Ant Media pattern: <video id="remoteVideo" ... /> 
-               But multiple remote streams? 
-               For 1-to-1, let's assume one remote video element.
-           */}
-                    <video
-                        id="remoteVideo"
-                        ref={remoteVideoRef}
-                        autoPlay
-                        playsInline
-                        className="w-full h-64 bg-black object-cover rounded-lg border border-gray-700"
-                    />
-                </div>
+        <div className="flex-1 min-w-[300px]">
+            <div className="bg-gray-800 p-4 rounded-lg mb-4">
+                <label className="block text-sm text-gray-400 mb-2">My Stream ID</label>
+                <input
+                    type="text"
+                    value={streamId}
+                    onChange={(e) => setStreamId(e.target.value)}
+                    className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
+                    disabled={isPublishing}
+                />
+                <p className="text-xs text-gray-500 mt-1">Share this IDs with your peer</p>
             </div>
 
-            <div className="flex gap-4">
+            <div className="aspect-video bg-black rounded-lg overflow-hidden border border-gray-700 relative mb-4">
+                <video
+                    id="localVideo" // Must match localVideoId in AntMediaProvider config
+                    ref={localVideoRef}
+                    autoPlay
+                    muted
+                    playsInline
+                    className="w-full h-full object-cover"
+                />
+                {!isPublishing && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-gray-400">
+                        Camera Offline
+                    </div>
+                )}
+                {/* Overlay Status */}
+                <h3 className="absolute top-2 left-2 bg-black/50 px-2 rounded z-10 text-sm">
+                    You {isConnected ? '(Ready)' : '(Connecting...)'}
+                </h3>
+            </div>
+
+            {!isPublishing ? (
                 <button
                     onClick={() => {
                         publish(streamId);
                         setIsPublishing(true);
                     }}
-                    disabled={!isConnected || isPublishing}
-                    className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded disabled:opacity-50"
+                    disabled={!isConnected}
+                    className="bg-green-600 hover:bg-green-700 px-6 py-2 rounded-lg font-semibold disabled:opacity-50 w-full"
                 >
-                    Start Call (Publish)
+                    Start Camera
                 </button>
-
-                <button
-                    onClick={() => {
-                        // For the 'play' to work effectively with a specific element, 
-                        // we might need to modify the Provider or access the adaptor's method 
-                        // that accepts a video element ID if available, or rely on global config.
-                        // Assuming standard `play` works and writes to the configured remote element? 
-                        // Or we need to pass the ID.
-
-                        // Let's assume we need to call play logic.
-                        // The current Play wrapper in Provider just calls adaptor.play(streamId).
-                        // Ant Media SDK default behavior: if no remoteVideoId configured, might not show?
-                        // Actually, often it expects us to handle the `newStreamAvailable` callback and attach track.
-
-                        // For this MVP, we will assume the user clicks "Play Peer" after peer starts.
-                        play(peerStreamId);
-                        setIsPlaying(true);
-                    }}
-                    disabled={!isConnected || isPlaying}
-                    className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded disabled:opacity-50"
-                >
-                    Connect to Peer (Play)
-                </button>
-
+            ) : (
                 <button
                     onClick={() => {
                         stop(streamId);
-                        stop(peerStreamId);
                         setIsPublishing(false);
-                        setIsPlaying(false);
                     }}
-                    disabled={!isPublishing && !isPlaying}
-                    className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded disabled:opacity-50"
+                    className="bg-red-600 hover:bg-red-700 px-6 py-2 rounded-lg font-semibold w-full"
                 >
-                    Hang Up
+                    Stop Camera
                 </button>
+            )}
+            {antError && <div className="text-red-400 text-xs mt-2">{antError}</div>}
+        </div>
+    );
+};
+
+// Sub-component for the Player (Remote Peer) side
+const PlayerSection = ({
+    streamId,
+    setStreamId,
+    isPlaying,
+    setIsPlaying
+}: {
+    streamId: string,
+    setStreamId: (id: string) => void,
+    isPlaying: boolean,
+    setIsPlaying: (v: boolean) => void
+}) => {
+    const { webRTCAdaptor, isConnected, play, stop, error: antError } = useAntMedia();
+    const remoteVideoRef = useRef<HTMLVideoElement>(null);
+
+    return (
+        <div className="flex-1 min-w-[300px]">
+            <div className="bg-gray-800 p-4 rounded-lg mb-4">
+                <label className="block text-sm text-gray-400 mb-2">Peer Stream ID</label>
+                <input
+                    type="text"
+                    value={streamId}
+                    onChange={(e) => setStreamId(e.target.value)}
+                    className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
+                    disabled={isPlaying}
+                />
+                <p className="text-xs text-gray-500 mt-1">Enter peer's ID to connect</p>
             </div>
 
-            <div className="text-xs text-gray-400 mt-2">
-                Status: {isConnected ? "Connected to Server" : "Disconnected"}
+            <div className="aspect-video bg-black rounded-lg overflow-hidden border border-gray-700 relative mb-4">
+                {/* Note: The ID here is critical for the SDK to attach the remote stream */}
+                <video
+                    id="remoteVideo"
+                    ref={remoteVideoRef}
+                    autoPlay
+                    playsInline
+                    className="w-full h-full object-cover"
+                />
+                {!isPlaying && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-gray-400">
+                        Peer Offline
+                    </div>
+                )}
+                <h3 className="absolute top-2 left-2 bg-black/50 px-2 rounded z-10 text-sm">
+                    Peer {isConnected ? '(Ready)' : '(Connecting...)'}
+                </h3>
+            </div>
+
+            {!isPlaying ? (
+                <button
+                    onClick={() => {
+                        play(streamId);
+                        setIsPlaying(true);
+                    }}
+                    disabled={!isConnected}
+                    className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg font-semibold disabled:opacity-50 w-full"
+                >
+                    Connect to Peer
+                </button>
+            ) : (
+                <button
+                    onClick={() => {
+                        stop(streamId);
+                        setIsPlaying(false);
+                    }}
+                    className="bg-red-600 hover:bg-red-700 px-6 py-2 rounded-lg font-semibold w-full"
+                >
+                    Disconnect Peer
+                </button>
+            )}
+            {antError && <div className="text-red-400 text-xs mt-2">{antError}</div>}
+        </div>
+    );
+};
+
+
+export default function OneToOneCall({ streamId, peerStreamId }: OneToOneCallProps) {
+    // Shared state management is done here, but execution is delegated to isolated providers
+    const [localStreamId, setLocalStreamId] = useState(streamId || '');
+    const [remoteStreamId, setRemoteStreamId] = useState(peerStreamId || 'user-2');
+
+    // Track status for main UI feedback (optional, or could be pushed down)
+    const [isPublishing, setIsPublishing] = useState(false);
+    const [isPlaying, setIsPlaying] = useState(false);
+
+    useEffect(() => {
+        if (!streamId && !localStreamId) {
+            setLocalStreamId(`user-${Math.floor(Math.random() * 10000)}`);
+        }
+    }, [streamId, localStreamId]);
+
+    return (
+        <div className="flex flex-col gap-4 p-4 border rounded-lg bg-gray-900 text-white max-w-5xl mx-auto">
+            <h2 className="text-xl font-bold mb-4">1-to-1 Video Call (Dual Channel)</h2>
+            <p className="text-sm text-gray-400 mb-6">
+                Establishing two separate secure connections for optimal stability.
+            </p>
+
+            <div className="flex flex-col md:flex-row gap-8">
+                {/* Left Side: Publisher (My Camera) */}
+                <AntMediaProvider role="publisher">
+                    <PublisherSection
+                        streamId={localStreamId}
+                        setStreamId={setLocalStreamId}
+                        isPublishing={isPublishing}
+                        setIsPublishing={setIsPublishing}
+                    />
+                </AntMediaProvider>
+
+                {/* Vertical Divider */}
+                <div className="hidden md:block w-px bg-gray-700 self-stretch"></div>
+
+                {/* Right Side: Player (Peer's Camera) */}
+                <AntMediaProvider role="player">
+                    <PlayerSection
+                        streamId={remoteStreamId}
+                        setStreamId={setRemoteStreamId}
+                        isPlaying={isPlaying}
+                        setIsPlaying={setIsPlaying}
+                    />
+                </AntMediaProvider>
             </div>
         </div>
     );
