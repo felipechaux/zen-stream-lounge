@@ -33,7 +33,7 @@ const PublisherSection = ({
     }, [webRTCAdaptor]);
 
     return (
-        <div className="flex-1 min-w-[300px]">
+        <div className="flex-1 w-full">
             <div className="bg-gray-800 p-4 rounded-lg mb-4">
                 <label className="block text-sm text-gray-400 mb-2">My Stream ID</label>
                 <input
@@ -109,7 +109,7 @@ const PlayerSection = ({
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
     return (
-        <div className="flex-1 min-w-[300px]">
+        <div className="flex-1 w-full">
             <div className="bg-gray-800 p-4 rounded-lg mb-4">
                 <label className="block text-sm text-gray-400 mb-2">Peer Stream ID</label>
                 <input
@@ -191,7 +191,7 @@ export default function OneToOneCall({ streamId, peerStreamId }: OneToOneCallPro
                 Establishing two separate secure connections for optimal stability.
             </p>
 
-            <div className="flex flex-col md:flex-row gap-8">
+            <div className="flex flex-col md:flex-row gap-4 md:gap-8">
                 {/* Left Side: Publisher (My Camera) */}
                 <AntMediaProvider role="publisher">
                     <PublisherSection

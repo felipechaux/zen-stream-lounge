@@ -41,7 +41,7 @@ function AntMediaContent() {
     }, [searchParams]);
 
     return (
-        <div className="min-h-screen bg-black text-white p-8">
+        <div className="min-h-screen bg-black text-white p-4 md:p-8">
             <header className="mb-12 border-b border-zinc-800 pb-6">
                 <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-orange-500">
                     ZenStream Lounge <span className="text-white text-2xl font-normal ml-2 opacity-50">x Ant Media</span>
