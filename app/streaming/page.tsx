@@ -42,25 +42,25 @@ function AntMediaContent() {
 
     return (
         <div className="min-h-screen bg-black text-white p-4 md:p-8">
-            <header className="mb-12 border-b border-zinc-800 pb-6">
-                <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-orange-500">
-                    ZenStream Lounge <span className="text-white text-2xl font-normal ml-2 opacity-50">x Ant Media</span>
-                </h1>
-                <p className="text-zinc-400 mt-3 text-lg">
-                    Demonstrating Real-Time Streaming Capabilities
-                </p>
-
-                <div className="absolute top-8 right-8">
-                    <Link
-                        href="/"
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white transition-all border border-zinc-700"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                            <path fillRule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z" />
-                        </svg>
-                        Back to Home
-                    </Link>
+            <header className="mb-12 border-b border-zinc-800 pb-6 flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+                <div>
+                    <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-orange-500">
+                        ZenStream Lounge <span className="text-white text-xl md:text-2xl font-normal ml-2 opacity-50 block md:inline">x Ant Media</span>
+                    </h1>
+                    <p className="text-zinc-400 mt-2 text-base md:text-lg">
+                        Demonstrating Real-Time Streaming Capabilities
+                    </p>
                 </div>
+
+                <Link
+                    href="/"
+                    className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white transition-all border border-zinc-700 w-full md:w-auto"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path fillRule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z" />
+                    </svg>
+                    Back to Home
+                </Link>
             </header>
 
             <div className="flex flex-wrap gap-4 mb-12 justify-center">
@@ -130,6 +130,9 @@ function AntMediaContent() {
                         <OneToOneCall streamId={userId} peerStreamId={peerId} />
                     </div>
                 )}
+                <div className="mt-12 text-center text-zinc-800 text-xs">
+                    v1.1 Mobile Fix
+                </div>
             </div>
         </div>
     );
