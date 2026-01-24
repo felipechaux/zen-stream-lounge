@@ -12,9 +12,19 @@ import Footer from '@/components/layout/Footer';
 import { MOCK_STREAMERS, Streamer } from "@/data/mockStreamers";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+import { useAuth } from "@/contexts/AuthContext";
+import { useEffect } from "react";
+
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
+  const { user, role, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && user && role === 'model') {
+      router.push('/dashboard');
+    }
+  }, [user, role, loading, router]);
 
   const categories = [
     "Featured", "Top Rated", "New Models", "Latina", "Blonde", "Ebony", "Asian", "Couples"
@@ -59,7 +69,7 @@ export default function HomePage() {
                 <Camera className="mr-2 h-6 w-6" />
                 Start Watching Free
               </Button>
-              <Link href="/login">
+              <Link href="/auth">
                 <Button variant="outline" size="lg" className="border-amber-500/50 text-amber-500 hover:bg-amber-950/30 text-xl px-10 h-14 rounded-full backdrop-blur-sm transition-all hover:scale-105">
                   Join Now
                 </Button>
