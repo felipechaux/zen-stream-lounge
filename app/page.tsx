@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Star, MapPin, Users, Camera, Radio, RefreshCw, Sparkles } from "lucide-react";
+import { Play, Star, MapPin, Users, Camera, Radio, Sparkles } from "lucide-react";
 import Image from 'next/image';
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -20,7 +20,7 @@ export default function HomePage() {
   const router = useRouter();
   const { user, role, loading } = useAuth();
   const { t } = useLanguage();
-  const { streams, count, loading: streamsLoading, error: streamsError, refetch } = useLiveStreams(30_000);
+  const { streams, count, loading: streamsLoading, error: streamsError, lastUpdated } = useLiveStreams();
 
   useEffect(() => {
     if (!loading && user && role === 'model') {
@@ -144,14 +144,10 @@ export default function HomePage() {
                 </span>
               )}
             </div>
-            <button
-              onClick={refetch}
-              className="flex items-center gap-1.5 text-zinc-600 hover:text-zinc-300 text-xs transition-colors duration-150 group"
-              aria-label="Refresh streams"
-            >
-              <RefreshCw className="h-3.5 w-3.5 group-hover:rotate-180 transition-transform duration-500" />
-              {t('refresh')}
-            </button>
+            <div className="flex items-center gap-1.5 text-zinc-600 text-xs" title={lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString()}` : ''}>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-zinc-600 hidden sm:inline">Live</span>
+            </div>
           </div>
 
           {streamsLoading ? (

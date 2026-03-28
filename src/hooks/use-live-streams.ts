@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import type { AntMediaBroadcast } from '@/lib/ant-media-server'
 
 export interface LiveStream {
@@ -23,32 +23,48 @@ function mapBroadcast(b: AntMediaBroadcast): LiveStream {
   }
 }
 
-export function useLiveStreams(pollInterval = 30_000) {
+export function useLiveStreams() {
   const [streams, setStreams] = useState<LiveStream[]>([])
   const [count, setCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const esRef = useRef<EventSource | null>(null)
 
-  const fetchStreams = useCallback(async () => {
-    try {
-      const res = await fetch('/api/streams')
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data = await res.json()
-      setStreams((data.streams as AntMediaBroadcast[]).map(mapBroadcast))
-      setCount(data.count ?? 0)
-      setError(null)
-    } catch (e) {
-      setError('Unable to reach streaming server')
-    } finally {
+  const connect = useCallback(() => {
+    // Close any existing connection
+    if (esRef.current) esRef.current.close()
+
+    const es = new EventSource('/api/streams/events')
+    esRef.current = es
+
+    es.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data)
+        setStreams((data.streams as AntMediaBroadcast[]).map(mapBroadcast))
+        setCount(data.count ?? 0)
+        setError(null)
+        setLastUpdated(new Date())
+      } catch (_) {}
+      setLoading(false)
+    }
+
+    es.onerror = () => {
+      setError('Reconnecting…')
+      // EventSource will auto-reconnect; just update status
       setLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    fetchStreams()
-    const id = setInterval(fetchStreams, pollInterval)
-    return () => clearInterval(id)
-  }, [fetchStreams, pollInterval])
+    connect()
+    return () => esRef.current?.close()
+  }, [connect])
 
-  return { streams, count, loading, error, refetch: fetchStreams }
+  const refetch = useCallback(() => {
+    setLoading(true)
+    connect()
+  }, [connect])
+
+  return { streams, count, loading, error, lastUpdated, refetch }
 }

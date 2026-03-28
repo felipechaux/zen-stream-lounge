@@ -1,206 +1,222 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+'use client'
+
+import React, { useEffect, useRef, useState } from 'react';
 
 interface LiveStreamPlayerProps {
   streamId: string;
-  autoPlay?: boolean;
 }
 
-const MAX_RETRIES = 3;
-const RETRY_DELAY_MS = 2500;
-
-async function fetchIceServers(): Promise<RTCIceServer[]> {
-  try {
-    const res = await fetch('/api/ice-servers');
-    if (res.ok) {
-      const data = await res.json();
-      return data.iceServers;
-    }
-  } catch (_) {}
-  // Fallback if API unreachable
-  return [{ urls: 'stun:stun.l.google.com:19302' }];
+/** Derives the HLS URL from the WebSocket env var */
+function getHlsUrl(streamId: string): string {
+  const ws = process.env.NEXT_PUBLIC_ANT_MEDIA_URL || '';
+  // wss://host:port/App/websocket → https://host:port/App/streams/{id}.m3u8
+  const base = ws.replace(/^wss?:\/\//, 'https://').replace(/\/websocket$/, '');
+  return `${base}/streams/${streamId}.m3u8`;
 }
 
-const LiveStreamPlayer: React.FC<LiveStreamPlayerProps> = ({ streamId, autoPlay = true }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [websocketConnected, setWebsocketConnected] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
-  const [isRetrying, setIsRetrying] = useState(false);
+const LiveStreamPlayer: React.FC<LiveStreamPlayerProps> = ({ streamId }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const hlsRef = useRef<any>(null);
+  const [status, setStatus] = useState<'loading' | 'playing' | 'error'>('loading');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [mode, setMode] = useState<'hls' | 'webrtc'>('hls');
 
-  const webRTCAdaptor = useRef<any>(null);
-  const playingStreamId = useRef<string | null>(null);
-  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // ── HLS player ──────────────────────────────────────────
+  useEffect(() => {
+    if (mode !== 'hls') return;
+    let destroyed = false;
 
-  const destroyAdaptor = useCallback(() => {
-    if (retryTimer.current) {
-      clearTimeout(retryTimer.current);
-      retryTimer.current = null;
-    }
-    if (webRTCAdaptor.current) {
-      try {
-        if (playingStreamId.current) webRTCAdaptor.current.stop(playingStreamId.current);
-        if (webRTCAdaptor.current.closeWebSocket) webRTCAdaptor.current.closeWebSocket();
-        else if (webRTCAdaptor.current.close) webRTCAdaptor.current.close();
-      } catch (_) {}
-      webRTCAdaptor.current = null;
-    }
-    playingStreamId.current = null;
-  }, []);
+    const initHls = async () => {
+      const Hls = (await import('hls.js')).default;
+      const video = videoRef.current;
+      if (!video || destroyed) return;
 
-  const scheduleRetry = useCallback((currentRetry: number) => {
-    if (currentRetry >= MAX_RETRIES) {
-      setError('Connection failed after several attempts. Please refresh the page.');
-      setIsRetrying(false);
-      return;
-    }
-    setIsRetrying(true);
-    setError(null);
-    retryTimer.current = setTimeout(() => {
-      setRetryCount(currentRetry + 1);
-    }, RETRY_DELAY_MS);
-  }, []);
+      const hlsUrl = getHlsUrl(streamId);
+
+      // Safari / iOS — native HLS support
+      if (!Hls.isSupported() && video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = hlsUrl;
+        video.play().catch(() => {});
+        setStatus('playing');
+        return;
+      }
+
+      if (!Hls.isSupported()) {
+        setErrorMsg('Your browser does not support HLS playback.');
+        setStatus('error');
+        return;
+      }
+
+      const hls = new Hls({
+        liveSyncDurationCount: 3,
+        liveMaxLatencyDurationCount: 6,
+        enableWorker: true,
+      });
+      hlsRef.current = hls;
+
+      hls.loadSource(hlsUrl);
+      hls.attachMedia(video);
+
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        if (!destroyed) {
+          video.play().catch(() => {});
+          setStatus('playing');
+        }
+      });
+
+      hls.on(Hls.Events.ERROR, (_: any, data: any) => {
+        if (destroyed) return;
+        if (data.fatal) {
+          if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+            setErrorMsg('Stream not available or not yet started.');
+          } else {
+            setErrorMsg('Playback error. The stream may have ended.');
+          }
+          setStatus('error');
+        }
+      });
+    };
+
+    initHls();
+
+    return () => {
+      destroyed = true;
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+    };
+  }, [streamId, mode]);
+
+  // ── WebRTC player (fallback) ─────────────────────────────
+  const webrtcAdaptorRef = useRef<any>(null);
 
   useEffect(() => {
-    let adaptor: any = null;
-    setWebsocketConnected(false);
-    setIsPlaying(false);
-    setError(null);
+    if (mode !== 'webrtc') return;
+    let destroyed = false;
 
-    const initAdaptor = async () => {
+    const initWebRTC = async () => {
       try {
-        const [{ WebRTCAdaptor }, iceServers] = await Promise.all([
+        const [{ WebRTCAdaptor }, iceRes] = await Promise.all([
           import('@antmedia/webrtc_adaptor'),
-          fetchIceServers(),
+          fetch('/api/ice-servers').then(r => r.json()).catch(() => ({ iceServers: [] })),
         ]);
+
         const url = process.env.NEXT_PUBLIC_ANT_MEDIA_URL;
+        if (!url || destroyed) return;
 
-        if (!url) {
-          setError('Ant Media URL not configured');
-          return;
-        }
-
-        adaptor = new WebRTCAdaptor({
+        const adaptor = new WebRTCAdaptor({
           websocket_url: url,
           isPlayMode: true,
           mediaConstraints: { video: false, audio: false },
-          peerconnection_config: { iceServers },
-          sdp_constraints: {
-            OfferToReceiveAudio: true,
-            OfferToReceiveVideo: true,
-          },
+          peerconnection_config: { iceServers: iceRes.iceServers },
+          sdp_constraints: { OfferToReceiveAudio: true, OfferToReceiveVideo: true },
           remoteVideoId: 'remoteVideo-player',
-          callback: (info: string, obj: any) => {
-            console.log('WebRTC info:', info, obj);
+          callback: (info: string) => {
+            if (destroyed) return;
             if (info === 'initialized') {
-              setWebsocketConnected(true);
-              setIsRetrying(false);
-              setError(null);
-            } else if (info === 'play_finished') {
-              setIsPlaying(false);
+              adaptor.play(streamId);
+              setStatus('playing');
             }
           },
-          callbackError: (err: string, message: any) => {
-            console.error('WebRTC error:', err, message);
+          callbackError: (err: string) => {
+            if (destroyed) return;
             if (err === 'no_stream_exist') {
-              setIsPlaying(false);
-              setError('Stream not found or offline');
-            } else if (err === 'WebSocketNotConnected') {
-              setIsPlaying(false);
-              setWebsocketConnected(false);
-              setRetryCount(c => {
-                scheduleRetry(c);
-                return c;
-              });
+              setErrorMsg('Stream not found or offline.');
             } else {
-              setError(typeof err === 'string' ? err : JSON.stringify(err));
+              setErrorMsg(`WebRTC error: ${err}`);
             }
+            setStatus('error');
           },
         });
-
-        webRTCAdaptor.current = adaptor;
-      } catch (e) {
-        console.error('Failed to load WebRTCAdaptor', e);
-        setError('Failed to load streaming library');
+        webrtcAdaptorRef.current = adaptor;
+      } catch {
+        if (!destroyed) {
+          setErrorMsg('Failed to load WebRTC player.');
+          setStatus('error');
+        }
       }
     };
 
-    initAdaptor();
+    setStatus('loading');
+    initWebRTC();
 
-    return () => { destroyAdaptor(); };
-  }, [streamId, retryCount, destroyAdaptor, scheduleRetry]);
+    return () => {
+      destroyed = true;
+      try {
+        webrtcAdaptorRef.current?.stop(streamId);
+        webrtcAdaptorRef.current?.closeWebSocket?.();
+      } catch (_) {}
+      webrtcAdaptorRef.current = null;
+    };
+  }, [streamId, mode]);
 
-  // Auto-play once connected
-  useEffect(() => {
-    if (websocketConnected && autoPlay && webRTCAdaptor.current && !isPlaying) {
-      playStream();
-    }
-  }, [websocketConnected, autoPlay]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const playStream = () => {
-    if (webRTCAdaptor.current && websocketConnected) {
-      setError(null);
-      playingStreamId.current = streamId;
-      webRTCAdaptor.current.play(streamId);
-      setIsPlaying(true);
-    }
-  };
-
-  const handleManualRetry = () => {
-    destroyAdaptor();
-    setRetryCount(0);
-    setError(null);
-    setIsRetrying(true);
-    // Trigger re-init by bumping retryCount via setState with a small trick
-    setTimeout(() => setRetryCount(1), 100);
+  const handleRetry = () => {
+    setStatus('loading');
+    setErrorMsg('');
+    // Toggle between modes on retry so the user can try the other method
+    setMode(m => m === 'hls' ? 'webrtc' : 'hls');
   };
 
   return (
     <div className="relative w-full aspect-video bg-zinc-900 rounded-xl overflow-hidden shadow-2xl border border-zinc-800">
-      {/* Connecting state */}
-      {!websocketConnected && !error && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-white bg-black/50 backdrop-blur-sm z-10">
-          <div className="animate-spin text-amber-500 mb-4">
-            <svg className="w-10 h-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+
+      {/* Loading overlay */}
+      {status === 'loading' && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-black/60 backdrop-blur-sm">
+          <div className="animate-spin text-amber-500 mb-3">
+            <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
           </div>
-          <p className="text-zinc-300 font-medium tracking-wide">
-            {isRetrying ? `Reconnecting…` : 'Connecting to Stream…'}
+          <p className="text-zinc-300 text-sm font-medium">
+            {mode === 'hls' ? 'Loading stream…' : 'Connecting via WebRTC…'}
           </p>
         </div>
       )}
 
-      {/* Error state */}
-      {error && (
-        <div className="absolute inset-0 flex items-center justify-center flex-col text-white bg-zinc-900/90 z-20 p-6 text-center gap-4">
+      {/* Error overlay */}
+      {status === 'error' && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-zinc-900/95 p-6 text-center gap-4">
           <div className="bg-red-900/20 p-4 rounded-full">
             <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
           <div>
-            <p className="text-red-400 font-bold mb-1 text-lg">Stream Unavailable</p>
-            <p className="text-zinc-400 text-sm max-w-md">{error}</p>
+            <p className="text-red-400 font-bold text-lg mb-1">Stream Unavailable</p>
+            <p className="text-zinc-400 text-sm max-w-sm">{errorMsg}</p>
           </div>
-          <button
-            onClick={handleManualRetry}
-            className="flex items-center gap-2 px-5 py-2 rounded-full bg-amber-500 hover:bg-amber-400 text-black font-bold text-sm transition-all duration-200"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Try Again
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={handleRetry}
+              className="px-5 py-2 rounded-full bg-amber-500 hover:bg-amber-400 text-black font-bold text-sm transition-all"
+            >
+              Try {mode === 'hls' ? 'WebRTC' : 'HLS'}
+            </button>
+            <button
+              onClick={() => { setStatus('loading'); setErrorMsg(''); setMode(m => m); }}
+              className="px-5 py-2 rounded-full bg-zinc-700 hover:bg-zinc-600 text-white font-bold text-sm transition-all"
+            >
+              Retry
+            </button>
+          </div>
+          <p className="text-zinc-600 text-xs">
+            Current method: {mode.toUpperCase()} — try the other if this keeps failing
+          </p>
         </div>
       )}
 
+      {/* Video element — used by both HLS and WebRTC */}
       <video
         id="remoteVideo-player"
+        ref={videoRef}
         className="w-full h-full object-contain bg-black"
         autoPlay
         playsInline
         controls
+        muted={false}
       />
     </div>
   );
