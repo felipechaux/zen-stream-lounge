@@ -5,6 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import QueryProvider from './providers'
 import CookieConsent from '@/components/layout/CookieConsent';
+import { LanguageProvider } from '@/contexts/LanguageContext';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -33,12 +34,14 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${playfair.variable} ${inter.className}`}>
         <QueryProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            {children}
-            <CookieConsent />
-          </TooltipProvider>
+          <LanguageProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              {children}
+              <CookieConsent />
+            </TooltipProvider>
+          </LanguageProvider>
         </QueryProvider>
       </body>
     </html>

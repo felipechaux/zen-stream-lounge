@@ -1,0 +1,138 @@
+export type Language = 'en' | 'es'
+
+export const translations = {
+  en: {
+    // Header
+    searchPlaceholder: 'Search performers…',
+    signIn: 'Sign In',
+    joinFree: 'Join Free',
+    goLive: 'Go Live',
+    notifications: 'Notifications',
+    creatorStudio: 'Creator Studio',
+    profile: 'Profile',
+    settings: 'Settings',
+    signOut: 'Sign out',
+    memberAccount: 'Member Account',
+    creatorAccount: 'Creator Account',
+    overview: 'Overview',
+    schedule: 'Schedule',
+    earnings: 'Earnings',
+
+    // Homepage hero
+    heroBadge: 'Premium Platform',
+    heroTitle1: 'Experience the',
+    heroTitleAccent: 'Intimacy',
+    heroSubtitle: "Interact with the world's most stunning models in real-time. Private shows, exclusive content, and unforgettable moments.",
+    heroCtaPrimary: 'Start Watching Free',
+    heroCtaSecondary: 'Join Now',
+    liveNow: 'Live Now',
+
+    // Tabs
+    tabAll: 'All Models',
+    tabFeatured: 'Featured',
+    tabNew: 'New & Hot',
+    tabVr: 'VR Cam',
+    tab4k: '4K Ultra HD',
+
+    // Sections
+    onAirNow: 'On Air Now',
+    browsePerformers: 'Browse Performers',
+    models: 'models',
+    loadMore: 'Load More Models',
+    refresh: 'Refresh',
+    noStreams: 'No streams live right now',
+    noStreamsSubtext: 'Performers go live every hour — check back soon',
+    tapToWatch: 'Tap to watch live',
+    broadcasting: 'Broadcasting',
+
+    // Footer
+    footerTagline: "The world's premier destination for exclusive live entertainment. Experience true premium quality.",
+    footerDiscover: 'Discover',
+    footerMembership: 'Membership',
+    footerSupport: 'Support',
+    footerTopRated: 'Top Rated',
+    footerNewModels: 'New Models',
+    footerCategories: 'Categories',
+    footerLiveNow: 'Live Now',
+    footerMemberLogin: 'Member Login',
+    footerSignUpFree: 'Sign Up Free',
+    footerMemberBenefits: 'Member Benefits',
+    footerPremiumPlans: 'Premium Plans',
+    footerSupport247: '24/7 Support',
+    footerBillingSupport: 'Billing Support',
+    footerSafetyCenter: 'Safety Center',
+    footerTerms: 'Terms & Privacy',
+    footerCookiePolicy: 'Cookie Policy',
+    footerRights: 'All rights reserved. 18+ Only.',
+    footerSsl: 'SSL Secured',
+    footerAge: 'Age Verified',
+  },
+  es: {
+    // Header
+    searchPlaceholder: 'Buscar modelos…',
+    signIn: 'Iniciar sesión',
+    joinFree: 'Únete gratis',
+    goLive: 'Ir en vivo',
+    notifications: 'Notificaciones',
+    creatorStudio: 'Estudio de creador',
+    profile: 'Perfil',
+    settings: 'Configuración',
+    signOut: 'Cerrar sesión',
+    memberAccount: 'Cuenta de miembro',
+    creatorAccount: 'Cuenta de creador',
+    overview: 'Resumen',
+    schedule: 'Horario',
+    earnings: 'Ganancias',
+
+    // Homepage hero
+    heroBadge: 'Plataforma Premium',
+    heroTitle1: 'Vive la',
+    heroTitleAccent: 'Intimidad',
+    heroSubtitle: 'Interactúa con los modelos más deslumbrantes del mundo en tiempo real. Shows privados, contenido exclusivo y momentos inolvidables.',
+    heroCtaPrimary: 'Ver gratis ahora',
+    heroCtaSecondary: 'Únete ya',
+    liveNow: 'En vivo ahora',
+
+    // Tabs
+    tabAll: 'Todos los modelos',
+    tabFeatured: 'Destacados',
+    tabNew: 'Nuevos y populares',
+    tabVr: 'Cámara VR',
+    tab4k: '4K Ultra HD',
+
+    // Sections
+    onAirNow: 'En emisión ahora',
+    browsePerformers: 'Explorar modelos',
+    models: 'modelos',
+    loadMore: 'Cargar más modelos',
+    refresh: 'Actualizar',
+    noStreams: 'No hay transmisiones en vivo ahora',
+    noStreamsSubtext: 'Los modelos se conectan cada hora — vuelve pronto',
+    tapToWatch: 'Toca para ver en vivo',
+    broadcasting: 'Transmitiendo',
+
+    // Footer
+    footerTagline: 'El destino premium del mundo para entretenimiento en vivo exclusivo. Experimenta la verdadera calidad premium.',
+    footerDiscover: 'Descubrir',
+    footerMembership: 'Membresía',
+    footerSupport: 'Soporte',
+    footerTopRated: 'Mejor valorados',
+    footerNewModels: 'Nuevos modelos',
+    footerCategories: 'Categorías',
+    footerLiveNow: 'En vivo ahora',
+    footerMemberLogin: 'Acceso miembros',
+    footerSignUpFree: 'Registro gratis',
+    footerMemberBenefits: 'Beneficios de miembro',
+    footerPremiumPlans: 'Planes premium',
+    footerSupport247: 'Soporte 24/7',
+    footerBillingSupport: 'Soporte de pagos',
+    footerSafetyCenter: 'Centro de seguridad',
+    footerTerms: 'Términos y privacidad',
+    footerCookiePolicy: 'Política de cookies',
+    footerRights: 'Todos los derechos reservados. Solo mayores de 18.',
+    footerSsl: 'SSL Seguro',
+    footerAge: 'Edad verificada',
+  },
+} satisfies Record<Language, Record<string, string>>
+
+export type TranslationKey = keyof typeof translations.en

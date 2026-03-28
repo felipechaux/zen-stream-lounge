@@ -12,12 +12,14 @@ import Footer from '@/components/layout/Footer';
 import { MOCK_STREAMERS } from "@/data/mockStreamers";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useLiveStreams, LiveStream } from "@/hooks/use-live-streams";
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
   const { user, role, loading } = useAuth();
+  const { t } = useLanguage();
   const { streams, count, loading: streamsLoading, error: streamsError, refetch } = useLiveStreams(30_000);
 
   useEffect(() => {
@@ -33,9 +35,7 @@ export default function HomePage() {
       )
     : MOCK_STREAMERS;
 
-  const categories = [
-    "Featured", "Top Rated", "New Models", "Latina", "Blonde", "Ebony", "Asian", "Couples"
-  ];
+  const categories = ["Featured", "Top Rated", "New Models", "Latina", "Blonde", "Ebony", "Asian", "Couples"];
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -70,25 +70,24 @@ export default function HomePage() {
               {count > 0 ? (
                 <div className="flex items-center gap-2 bg-red-600/90 text-white px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest backdrop-blur-sm">
                   <span className="live-dot" />
-                  {count} Live Now
+                  {count} {t('liveNow')}
                 </div>
               ) : (
                 <Badge className="bg-amber-500/90 text-black hover:bg-amber-400 border-none px-3.5 py-1.5 text-xs font-bold uppercase tracking-widest backdrop-blur-sm rounded-full">
                   <Sparkles className="h-3 w-3 mr-1.5" />
-                  Premium Platform
+                  {t('heroBadge')}
                 </Badge>
               )}
             </div>
 
             {/* Display heading — Playfair Display */}
             <h1 className="font-display text-5xl md:text-7xl lg:text-[5.5rem] font-bold leading-[1.05] tracking-tight text-white drop-shadow-2xl">
-              Experience the{' '}
-              <span className="text-gradient-luxury italic">Intimacy</span>
+              {t('heroTitle1')}{' '}
+              <span className="text-gradient-luxury italic">{t('heroTitleAccent')}</span>
             </h1>
 
             <p className="text-lg md:text-xl text-zinc-400 max-w-xl leading-relaxed font-light">
-              Interact with the world&apos;s most stunning models in real-time.
-              Private shows, exclusive content, and unforgettable moments.
+              {t('heroSubtitle')}
             </p>
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-2">
@@ -97,7 +96,7 @@ export default function HomePage() {
                 className="h-12 px-8 text-base font-bold bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black border-none rounded-full shadow-xl shadow-amber-900/30 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
               >
                 <Camera className="mr-2 h-5 w-5" />
-                Start Watching Free
+                {t('heroCtaPrimary')}
               </Button>
               <Link href="/auth">
                 <Button
@@ -105,7 +104,7 @@ export default function HomePage() {
                   size="lg"
                   className="h-12 px-8 text-base border-white/20 text-white/80 hover:bg-white/[0.07] hover:text-white hover:border-white/30 rounded-full backdrop-blur-sm transition-all duration-200"
                 >
-                  Join Now
+                  {t('heroCtaSecondary')}
                 </Button>
               </Link>
             </div>
@@ -119,7 +118,7 @@ export default function HomePage() {
         {/* Tab filters */}
         <Tabs defaultValue="all" className="w-full mb-10">
           <TabsList className="w-full justify-start overflow-x-auto flex-nowrap no-scrollbar snap-x snap-mandatory bg-white/[0.04] backdrop-blur-xl p-1.5 border border-white/[0.07] rounded-2xl shadow-glass">
-            {["All Models", "Featured", "New & Hot", "VR Cam", "4K Ultra HD"].map((label, i) => {
+            {[t('tabAll'), t('tabFeatured'), t('tabNew'), t('tabVr'), t('tab4k')].map((label, i) => {
               const value = ["all", "featured", "new", "vr", "4k"][i];
               return (
                 <TabsTrigger
@@ -138,10 +137,10 @@ export default function HomePage() {
         <section className="mb-16">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
-              <h2 className="font-display text-2xl font-bold text-white tracking-tight">On Air Now</h2>
+              <h2 className="font-display text-2xl font-bold text-white tracking-tight">{t('onAirNow')}</h2>
               {count > 0 && (
                 <span className="bg-red-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
-                  {count} Live
+                  {count} {t('liveNow')}
                 </span>
               )}
             </div>
@@ -151,7 +150,7 @@ export default function HomePage() {
               aria-label="Refresh streams"
             >
               <RefreshCw className="h-3.5 w-3.5 group-hover:rotate-180 transition-transform duration-500" />
-              Refresh
+              {t('refresh')}
             </button>
           </div>
 
@@ -180,6 +179,8 @@ export default function HomePage() {
                 <LiveStreamCard
                   key={stream.streamId}
                   stream={stream}
+                  tapToWatch={t('tapToWatch')}
+                  broadcasting={t('broadcasting')}
                   onClick={() => router.push(`/streaming?mode=play&id=${stream.streamId}`)}
                 />
               ))}
@@ -189,9 +190,9 @@ export default function HomePage() {
               <div className="w-14 h-14 rounded-full bg-white/[0.04] border border-white/[0.07] flex items-center justify-center mb-4">
                 <Radio className="h-6 w-6 text-zinc-600" />
               </div>
-              <p className="text-zinc-400 font-medium text-sm">No streams live right now</p>
+              <p className="text-zinc-400 font-medium text-sm">{t('noStreams')}</p>
               <p className="text-zinc-600 text-xs mt-1.5">
-                {streamsError ?? 'Performers go live every hour — check back soon'}
+                {streamsError ?? t('noStreamsSubtext')}
               </p>
             </div>
           )}
@@ -200,8 +201,8 @@ export default function HomePage() {
         {/* ── Performers Catalog ─────────────────────────── */}
         <section>
           <div className="flex items-center gap-3 mb-5">
-            <h2 className="font-display text-2xl font-bold text-white tracking-tight">Browse Performers</h2>
-            <span className="text-zinc-600 text-sm">{filteredMock.length} models</span>
+            <h2 className="font-display text-2xl font-bold text-white tracking-tight">{t('browsePerformers')}</h2>
+            <span className="text-zinc-600 text-sm">{filteredMock.length} {t('models')}</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
@@ -220,7 +221,7 @@ export default function HomePage() {
               size="lg"
               className="h-11 px-8 text-sm border-white/[0.1] text-zinc-400 hover:bg-white/[0.06] hover:text-white hover:border-white/[0.2] rounded-full transition-all duration-200"
             >
-              Load More Models
+              {t('loadMore')}
             </Button>
           </div>
         </section>
@@ -232,7 +233,7 @@ export default function HomePage() {
 }
 
 /* ── Live Stream Card ─────────────────────────────────── */
-function LiveStreamCard({ stream, onClick }: { stream: LiveStream; onClick: () => void }) {
+function LiveStreamCard({ stream, tapToWatch, broadcasting, onClick }: { stream: LiveStream; tapToWatch: string; broadcasting: string; onClick: () => void }) {
   const [imgError, setImgError] = useState(false);
 
   return (
@@ -282,13 +283,13 @@ function LiveStreamCard({ stream, onClick }: { stream: LiveStream; onClick: () =
         {/* Name overlay */}
         <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 via-black/50 to-transparent translate-y-1 group-hover:translate-y-0 transition-transform duration-300">
           <h3 className="font-display text-white font-semibold text-base truncate">{stream.name}</h3>
-          <p className="text-zinc-400 text-xs mt-0.5">Tap to watch live</p>
+          <p className="text-zinc-400 text-xs mt-0.5">{tapToWatch}</p>
         </div>
       </div>
 
       <div className="px-3 py-2.5 border-t border-white/[0.06]">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] uppercase tracking-widest text-red-400 font-bold">Broadcasting</span>
+          <span className="text-[10px] uppercase tracking-widest text-red-400 font-bold">{broadcasting}</span>
           <span className="text-[10px] text-zinc-700 font-mono truncate max-w-[100px]">{stream.streamId}</span>
         </div>
       </div>

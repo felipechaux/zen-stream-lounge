@@ -2,30 +2,33 @@
 
 import Link from "next/link";
 import { Twitter, Instagram, Lock, Shield } from "lucide-react";
-
-const footerLinks = {
-  Discover: [
-    { label: 'Top Rated', href: '/top-rated' },
-    { label: 'New Models', href: '/new' },
-    { label: 'Categories', href: '/categories' },
-    { label: 'Live Now', href: '/' },
-  ],
-  Membership: [
-    { label: 'Member Login', href: '/auth' },
-    { label: 'Sign Up Free', href: '/auth' },
-    { label: 'Member Benefits', href: '/benefits' },
-    { label: 'Premium Plans', href: '/plans' },
-  ],
-  Support: [
-    { label: '24/7 Support', href: '/help' },
-    { label: 'Billing Support', href: '/billing-support' },
-    { label: 'Safety Center', href: '/safety' },
-    { label: 'Terms & Privacy', href: '/terms' },
-    { label: 'Cookie Policy', href: '/cookie-policy' },
-  ],
-};
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function Footer() {
+  const { t } = useLanguage();
+
+  const footerLinks = {
+    [t('footerDiscover')]: [
+      { label: t('footerTopRated'), href: '/top-rated' },
+      { label: t('footerNewModels'), href: '/new' },
+      { label: t('footerCategories'), href: '/categories' },
+      { label: t('footerLiveNow'), href: '/' },
+    ],
+    [t('footerMembership')]: [
+      { label: t('footerMemberLogin'), href: '/auth' },
+      { label: t('footerSignUpFree'), href: '/auth' },
+      { label: t('footerMemberBenefits'), href: '/benefits' },
+      { label: t('footerPremiumPlans'), href: '/plans' },
+    ],
+    [t('footerSupport')]: [
+      { label: t('footerSupport247'), href: '/help' },
+      { label: t('footerBillingSupport'), href: '/billing-support' },
+      { label: t('footerSafetyCenter'), href: '/safety' },
+      { label: t('footerTerms'), href: '/terms' },
+      { label: t('footerCookiePolicy'), href: '/cookie-policy' },
+    ],
+  };
+
   return (
     <footer
       className="w-full border-t border-white/[0.06] pt-16 pb-8 mt-auto"
@@ -42,7 +45,7 @@ export default function Footer() {
               ZenStream Lounge
             </span>
             <p className="text-zinc-500 text-sm leading-relaxed mt-3">
-              The world&apos;s premier destination for exclusive live entertainment. Experience true premium quality.
+              {t('footerTagline')}
             </p>
             <div className="flex items-center gap-2 pt-2">
               {[
@@ -85,16 +88,16 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="border-t border-white/[0.05] pt-6 flex flex-col sm:flex-row justify-between items-center gap-3">
           <p className="text-[11px] text-zinc-700 order-2 sm:order-1" suppressHydrationWarning>
-            © {new Date().getFullYear()} ZenStream Lounge. All rights reserved. 18+ Only.
+            © {new Date().getFullYear()} ZenStream Lounge. {t('footerRights')}
           </p>
           <div className="flex items-center gap-4 order-1 sm:order-2">
             <div className="flex items-center gap-1.5 text-[11px] text-zinc-700">
               <Lock className="h-3 w-3" />
-              SSL Secured
+              {t('footerSsl')}
             </div>
             <div className="flex items-center gap-1.5 text-[11px] text-zinc-700">
               <Shield className="h-3 w-3" />
-              Age Verified
+              {t('footerAge')}
             </div>
           </div>
         </div>
