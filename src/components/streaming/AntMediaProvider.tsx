@@ -100,7 +100,12 @@ export default function AntMediaProvider({
           websocket_url: url,
           mediaConstraints: mediaConstraints,
           peerconnection_config: {
-            'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }]
+            iceServers: [
+              { urls: 'stun:stun.l.google.com:19302' },
+              { urls: 'stun:stun1.l.google.com:19302' },
+              { urls: 'stun:stun2.l.google.com:19302' },
+              { urls: 'stun:stun3.l.google.com:19302' },
+            ],
           },
           sdp_constraints: sdpConstraints,
           localVideoId: "localVideo", // These IDs need to be present in the DOM where used, or handled dynamically
