@@ -23,7 +23,7 @@ type AuthFormValues = {
 }
 
 export default function AuthForm() {
-    const [isLogin, setIsLogin] = useState(() => searchParams.get('mode') !== 'signup')
+    const [isLogin, setIsLogin] = useState(true)
     const [showPassword, setShowPassword] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -40,10 +40,8 @@ export default function AuthForm() {
     })
 
     useEffect(() => {
-        const callbackError = searchParams.get('error')
-        if (callbackError) {
-            setError(t('authExpiredLink'))
-        }
+        if (searchParams.get('mode') === 'signup') setIsLogin(false)
+        if (searchParams.get('error')) setError(t('authExpiredLink'))
     }, [searchParams])
 
     const form = useForm<AuthFormValues>({

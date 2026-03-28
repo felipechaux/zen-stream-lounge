@@ -55,6 +55,9 @@ export default function AntMediaProvider({
 
     const initAdaptor = async () => {
       try {
+        const iceServersRes = await fetch('/api/ice-servers').then(r => r.json()).catch(() => ({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }));
+        const iceServers = iceServersRes.iceServers;
+
         // Dynamically import WebRTCAdaptor to avoid SSR issues
         // @antmedia/webrtc_adaptor is not SSR friendly
         const { WebRTCAdaptor } = await import('@antmedia/webrtc_adaptor');
@@ -99,14 +102,7 @@ export default function AntMediaProvider({
         const adaptor = new WebRTCAdaptor({
           websocket_url: url,
           mediaConstraints: mediaConstraints,
-          peerconnection_config: {
-            iceServers: [
-              { urls: 'stun:stun.l.google.com:19302' },
-              { urls: 'stun:stun1.l.google.com:19302' },
-              { urls: 'stun:stun2.l.google.com:19302' },
-              { urls: 'stun:stun3.l.google.com:19302' },
-            ],
-          },
+          peerconnection_config: { iceServers },
           sdp_constraints: sdpConstraints,
           localVideoId: "localVideo", // These IDs need to be present in the DOM where used, or handled dynamically
           isShow: false, // Don't show by default, let components handle visibility

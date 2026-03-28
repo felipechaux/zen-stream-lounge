@@ -8,14 +8,17 @@ interface LiveStreamPlayerProps {
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 2500;
 
-const ICE_SERVERS = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:stun3.l.google.com:19302' },
-  ],
-};
+async function fetchIceServers(): Promise<RTCIceServer[]> {
+  try {
+    const res = await fetch('/api/ice-servers');
+    if (res.ok) {
+      const data = await res.json();
+      return data.iceServers;
+    }
+  } catch (_) {}
+  // Fallback if API unreachable
+  return [{ urls: 'stun:stun.l.google.com:19302' }];
+}
 
 const LiveStreamPlayer: React.FC<LiveStreamPlayerProps> = ({ streamId, autoPlay = true }) => {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -65,7 +68,10 @@ const LiveStreamPlayer: React.FC<LiveStreamPlayerProps> = ({ streamId, autoPlay 
 
     const initAdaptor = async () => {
       try {
-        const { WebRTCAdaptor } = await import('@antmedia/webrtc_adaptor');
+        const [{ WebRTCAdaptor }, iceServers] = await Promise.all([
+          import('@antmedia/webrtc_adaptor'),
+          fetchIceServers(),
+        ]);
         const url = process.env.NEXT_PUBLIC_ANT_MEDIA_URL;
 
         if (!url) {
@@ -77,7 +83,7 @@ const LiveStreamPlayer: React.FC<LiveStreamPlayerProps> = ({ streamId, autoPlay 
           websocket_url: url,
           isPlayMode: true,
           mediaConstraints: { video: false, audio: false },
-          peerconnection_config: ICE_SERVERS,
+          peerconnection_config: { iceServers },
           sdp_constraints: {
             OfferToReceiveAudio: true,
             OfferToReceiveVideo: true,
