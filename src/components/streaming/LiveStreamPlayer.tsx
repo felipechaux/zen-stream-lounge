@@ -6,12 +6,9 @@ interface LiveStreamPlayerProps {
   streamId: string;
 }
 
-/** Derives the HLS URL from the WebSocket env var */
+/** Routes HLS through the Next.js proxy so port 5443 is never hit directly by the client */
 function getHlsUrl(streamId: string): string {
-  const ws = process.env.NEXT_PUBLIC_ANT_MEDIA_URL || '';
-  // wss://host:port/App/websocket → https://host:port/App/streams/{id}.m3u8
-  const base = ws.replace(/^wss?:\/\//, 'https://').replace(/\/websocket$/, '');
-  return `${base}/streams/${streamId}.m3u8`;
+  return `/api/streams/hls/${streamId}.m3u8`;
 }
 
 const LiveStreamPlayer: React.FC<LiveStreamPlayerProps> = ({ streamId }) => {
