@@ -2,73 +2,104 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/*
+  ZenStream Lounge — Design System
+  Style: Modern Dark Cinema + Glassmorphism
+  Typography: Playfair Display (display) + Inter (body)
+  Palette: Video Streaming/OTT — cinema black + amber gold
+  Skill: ui-ux-pro-max
 */
 
 @layer base {
   :root {
-    /* Streaming Platform Dark Theme */
-    --background: 0 0% 8%;
-    --background-subtle: 0 0% 12%;
-    --background-elevated: 0 0% 16%;
-    --foreground: 0 0% 95%;
-    --foreground-muted: 0 0% 70%;
-    
-    /* Streaming Brand Colors */
-    --streaming-red: 348 96% 58%;
-    --streaming-red-hover: 348 96% 52%;
-    --streaming-gold: 45 100% 60%;
-    --streaming-purple: 270 80% 65%;
-    
-    /* Gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(348 96% 58% / 0.9), hsl(270 80% 65% / 0.9));
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 16%), hsl(0 0% 20%));
-    --gradient-overlay: linear-gradient(180deg, transparent 0%, hsl(0 0% 8% / 0.8) 70%, hsl(0 0% 8%) 100%);
-    
-    /* Card System */
-    --card: var(--background-elevated);
-    --card-foreground: var(--foreground);
-    --card-hover: 0 0% 20%;
-    
-    /* Interactive Elements */
-    --primary: var(--streaming-red);
-    --primary-foreground: 0 0% 100%;
-    --primary-hover: var(--streaming-red-hover);
-    
-    --secondary: var(--background-elevated);
-    --secondary-foreground: var(--foreground);
-    --secondary-hover: 0 0% 22%;
-    
-    --accent: var(--streaming-gold);
-    --accent-foreground: 0 0% 10%;
-    
-    /* Borders and Inputs */
-    --border: 0 0% 25%;
-    --border-hover: 0 0% 35%;
-    --input: var(--background-elevated);
-    --input-border: var(--border);
-    --ring: var(--streaming-red);
-    
-    /* Feedback Colors */
+    /* ── Cinema Dark Backgrounds ─────────────────────────── */
+    --background: 240 10% 3.9%;        /* #09090b — deep zinc, NOT pure black (avoids OLED smear) */
+    --background-subtle: 240 6% 6%;    /* #0e0e10 */
+    --background-elevated: 240 5% 8%;  /* #131316 */
+    --background-card: 240 5% 9%;      /* #161619 */
+
+    /* ── Foreground / Text ───────────────────────────────── */
+    --foreground: 0 0% 95%;            /* #f2f2f2 */
+    --foreground-muted: 240 5% 55%;    /* #888892 */
+    --foreground-subtle: 240 4% 38%;   /* #5c5c68 */
+
+    /* ── Brand Colors ────────────────────────────────────── */
+    --amber: 38 92% 50%;               /* #f59e0b — signature amber/gold */
+    --amber-deep: 32 95% 44%;          /* #d97706 — deeper gold */
+    --amber-glow: 38 92% 50%;
+    --red-live: 348 96% 58%;           /* #f43f5e — live/urgent red */
+    --purple-accent: 270 80% 65%;      /* #a855f7 — secondary accent */
+
+    /* ── Glass Morphism Tokens ───────────────────────────── */
+    --glass-bg: rgba(255, 255, 255, 0.035);
+    --glass-bg-hover: rgba(255, 255, 255, 0.06);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-border-hover: rgba(255, 255, 255, 0.15);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+
+    /* ── Ambient Glow Effects ────────────────────────────── */
+    --glow-amber: rgba(245, 158, 11, 0.18);
+    --glow-amber-strong: rgba(245, 158, 11, 0.35);
+    --glow-red: rgba(244, 63, 94, 0.2);
+    --glow-purple: rgba(168, 85, 247, 0.15);
+
+    /* ── shadcn/ui semantic tokens ───────────────────────── */
+    --card: 240 5% 9%;
+    --card-foreground: 0 0% 95%;
+    --card-hover: 240 5% 12%;
+
+    --primary: 38 92% 50%;
+    --primary-foreground: 240 10% 4%;
+    --primary-hover: 32 95% 44%;
+
+    --secondary: 240 5% 8%;
+    --secondary-foreground: 0 0% 95%;
+    --secondary-hover: 240 5% 12%;
+
+    --accent: 38 92% 50%;
+    --accent-foreground: 240 10% 4%;
+
+    --muted: 240 6% 6%;
+    --muted-foreground: 240 5% 55%;
+
+    --border: 240 5% 15%;
+    --border-hover: 240 5% 25%;
+    --input: 240 5% 8%;
+    --input-border: 240 5% 15%;
+    --ring: 38 92% 50%;
+
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --muted: var(--background-subtle);
-    --muted-foreground: var(--foreground-muted);
-    
-    /* Popover */
-    --popover: var(--background-elevated);
-    --popover-foreground: var(--foreground);
-    
-    /* Animations */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-spring: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    
-    /* Shadows */
-    --shadow-card: 0 4px 20px -2px hsl(0 0% 0% / 0.4);
-    --shadow-card-hover: 0 8px 40px -4px hsl(0 0% 0% / 0.6);
-    --shadow-glow: 0 0 30px hsl(var(--streaming-red) / 0.3);
-    
+
+    --popover: 240 5% 9%;
+    --popover-foreground: 0 0% 95%;
+
+    /* ── Streaming-specific (kept for compatibility) ─────── */
+    --streaming-red: 348 96% 58%;
+    --streaming-red-hover: 348 96% 52%;
+    --streaming-gold: 38 92% 50%;
+    --streaming-purple: 270 80% 65%;
+
+    /* ── Shadows ─────────────────────────────────────────── */
+    --shadow-card: 0 4px 24px -4px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.05) inset;
+    --shadow-card-hover: 0 12px 48px -8px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    --shadow-glow: 0 0 40px rgba(245, 158, 11, 0.2);
+    --shadow-glow-red: 0 0 40px rgba(244, 63, 94, 0.25);
+
+    /* ── Gradients ───────────────────────────────────────── */
+    --gradient-hero: linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(168,85,247,0.08) 100%);
+    --gradient-card: linear-gradient(145deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    --gradient-overlay: linear-gradient(180deg, transparent 0%, rgba(9,9,11,0.85) 65%, hsl(240 10% 3.9%) 100%);
+    --gradient-ambient: radial-gradient(ellipse 60% 50% at 20% 60%, rgba(245,158,11,0.05) 0%, transparent 70%),
+                        radial-gradient(ellipse 50% 40% at 80% 20%, rgba(168,85,247,0.04) 0%, transparent 70%);
+
+    /* ── Transitions ─────────────────────────────────────── */
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    --transition-smooth: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    --transition-spring: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+    /* ── Spacing & Radius ────────────────────────────────── */
     --radius: 0.75rem;
   }
 }
@@ -80,5 +111,119 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    background-image: var(--gradient-ambient);
+    background-attachment: fixed;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: hsl(var(--background)); }
+  ::-webkit-scrollbar-thumb { background: hsl(var(--border-hover)); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(var(--foreground-muted)); }
+
+  /* Hide scrollbar for tab overflow rows */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}
+
+@layer components {
+  /* ── Display Typography ──────────────────────────────── */
+  .font-display {
+    font-family: var(--font-display), 'Playfair Display', Georgia, serif;
+  }
+
+  /* ── Glass Card ──────────────────────────────────────── */
+  .glass-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: var(--transition-smooth);
+  }
+
+  .glass-card:hover {
+    background: var(--glass-bg-hover);
+    border-color: var(--glass-border-hover);
+  }
+
+  /* ── Ambient Glow on Hover ───────────────────────────── */
+  .glow-amber-hover:hover {
+    box-shadow: 0 0 0 1px rgba(245,158,11,0.3), 0 8px 32px rgba(245,158,11,0.15), 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  .glow-red-hover:hover {
+    box-shadow: 0 0 0 1px rgba(244,63,94,0.3), 0 8px 32px rgba(244,63,94,0.15), 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  /* ── Live Pulse Badge ────────────────────────────────── */
+  .live-badge {
+    @apply flex items-center gap-1.5 bg-red-600 text-white px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wide;
+  }
+
+  .live-dot {
+    @apply w-1.5 h-1.5 rounded-full bg-white;
+    animation: live-pulse 1.5s ease-in-out infinite;
+  }
+
+  /* ── Section Heading ─────────────────────────────────── */
+  .section-heading {
+    font-family: var(--font-display), 'Playfair Display', Georgia, serif;
+    @apply text-white font-bold tracking-tight;
+  }
+}
+
+@layer utilities {
+  /* ── Gradient Text ───────────────────────────────────── */
+  .text-gradient-amber {
+    background: linear-gradient(135deg, #f59e0b 0%, #fcd34d 50%, #d97706 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-luxury {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 40%, #c2410c 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+/* ── Keyframe Animations ─────────────────────────────── */
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.85); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes accordion-down {
+  from { height: 0; }
+  to   { height: var(--radix-accordion-content-height); }
+}
+
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); }
+  to   { height: 0; }
+}
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

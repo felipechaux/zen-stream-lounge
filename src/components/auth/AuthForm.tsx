@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -29,7 +29,15 @@ export default function AuthForm() {
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const router = useRouter()
+    const searchParams = useSearchParams()
     const { signIn, signUp } = useAuth()
+
+    useEffect(() => {
+        const callbackError = searchParams.get('error')
+        if (callbackError) {
+            setError('Email link has expired or is invalid. Please sign in again.')
+        }
+    }, [searchParams])
 
     const form = useForm<AuthFormValues>({
         resolver: zodResolver(authSchema),
