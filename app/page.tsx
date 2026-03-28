@@ -98,7 +98,7 @@ export default function HomePage() {
                 <Camera className="mr-2 h-5 w-5" />
                 {t('heroCtaPrimary')}
               </Button>
-              <Link href="/auth">
+              <Link href="/auth?mode=signup">
                 <Button
                   variant="outline"
                   size="lg"

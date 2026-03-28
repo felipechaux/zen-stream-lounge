@@ -177,7 +177,7 @@ export default function Header({ searchQuery, setSearchQuery }: HeaderProps) {
                     {t('signIn')}
                   </Button>
                 </Link>
-                <Link href="/auth">
+                <Link href="/auth?mode=signup">
                   <Button
                     size="sm"
                     className="hidden md:flex h-8 px-4 text-xs bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black font-bold border-none shadow-lg shadow-amber-900/20 rounded-lg transition-all duration-200"

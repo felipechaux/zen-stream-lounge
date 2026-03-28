@@ -23,7 +23,7 @@ type AuthFormValues = {
 }
 
 export default function AuthForm() {
-    const [isLogin, setIsLogin] = useState(true)
+    const [isLogin, setIsLogin] = useState(() => searchParams.get('mode') !== 'signup')
     const [showPassword, setShowPassword] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
