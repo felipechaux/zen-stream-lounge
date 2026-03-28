@@ -12,16 +12,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useLanguage } from '@/contexts/LanguageContext'
 import Link from 'next/link'
 
-const authSchema = z.object({
-    email: z.string().email('Please enter a valid email address'),
-    password: z.string().min(6, 'Password must be at least 6 characters long'),
-    fullName: z.string().optional(),
-    role: z.enum(['user', 'model']).default('user'),
-})
-
-type AuthFormValues = z.infer<typeof authSchema>
+type AuthFormValues = {
+    email: string
+    password: string
+    fullName?: string
+    role: 'user' | 'model'
+}
 
 export default function AuthForm() {
     const [isLogin, setIsLogin] = useState(true)
@@ -31,11 +30,19 @@ export default function AuthForm() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const { signIn, signUp } = useAuth()
+    const { t } = useLanguage()
+
+    const authSchema = z.object({
+        email: z.string().email(t('authEmailInvalid')),
+        password: z.string().min(6, t('authPasswordMin')),
+        fullName: z.string().optional(),
+        role: z.enum(['user', 'model']).default('user'),
+    })
 
     useEffect(() => {
         const callbackError = searchParams.get('error')
         if (callbackError) {
-            setError('Email link has expired or is invalid. Please sign in again.')
+            setError(t('authExpiredLink'))
         }
     }, [searchParams])
 
@@ -60,7 +67,7 @@ export default function AuthForm() {
                 router.push('/')
             } else {
                 if (!values.fullName) {
-                    form.setError('fullName', { message: 'Full name is required for signup' })
+                    form.setError('fullName', { message: t('authFullNameRequired') })
                     throw new Error('Full name is required')
                 }
                 const { error } = await signUp(values.email, values.password, values.role, values.fullName)
@@ -68,7 +75,7 @@ export default function AuthForm() {
                 // You might want to show a success message or redirect
             }
         } catch (err: any) {
-            setError(err.message || 'An unexpected error occurred.')
+            setError(err.message || t('authUnexpectedError'))
         } finally {
             setIsLoading(false)
         }
@@ -87,18 +94,18 @@ export default function AuthForm() {
                 className="inline-flex items-center text-sm text-zinc-400 hover:text-amber-500 transition-colors"
             >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to ZenStream Lounge
+                {t('authBackLink')}
             </Link>
 
             <Card className="shadow-2xl bg-zinc-900 border-zinc-800">
                 <CardHeader className="space-y-1 text-center">
                     <CardTitle className="text-2xl font-bold text-white">
-                        {isLogin ? 'Welcome back' : 'Create an account'}
+                        {isLogin ? t('authWelcomeBack') : t('authCreateAccount')}
                     </CardTitle>
                     <CardDescription className="text-zinc-400">
-                        {isLogin ? 'Sign in to your ' : 'Join '}
+                        {isLogin ? `${t('authSignInTo')} ` : `${t('authJoin')} `}
                         <span className="text-amber-500 font-medium">ZenStream Lounge</span>
-                        {isLogin ? ' account' : ' today'}
+                        {isLogin ? ` ${t('authAccount')}` : ` ${t('authToday')}`}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -116,10 +123,10 @@ export default function AuthForm() {
                                     name="fullName"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-zinc-300">Full Name</FormLabel>
+                                            <FormLabel className="text-zinc-300">{t('authFullName')}</FormLabel>
                                             <FormControl>
                                                 <Input
-                                                    placeholder="Your name"
+                                                    placeholder={t('authFullNamePlaceholder')}
                                                     {...field}
                                                     disabled={isLoading}
                                                     className="bg-zinc-950 border-zinc-800 text-white focus:ring-amber-500/50 focus:border-amber-500"
@@ -136,11 +143,11 @@ export default function AuthForm() {
                                 name="email"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-zinc-300">Email</FormLabel>
+                                        <FormLabel className="text-zinc-300">{t('authEmail')}</FormLabel>
                                         <FormControl>
                                             <Input
                                                 type="email"
-                                                placeholder="Enter your email"
+                                                placeholder={t('authEmailPlaceholder')}
                                                 {...field}
                                                 disabled={isLoading}
                                                 className="bg-zinc-950 border-zinc-800 text-white focus:ring-amber-500/50 focus:border-amber-500"
@@ -156,12 +163,12 @@ export default function AuthForm() {
                                 name="password"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-zinc-300">Password</FormLabel>
+                                        <FormLabel className="text-zinc-300">{t('authPassword')}</FormLabel>
                                         <FormControl>
                                             <div className="relative">
                                                 <Input
                                                     type={showPassword ? 'text' : 'password'}
-                                                    placeholder={isLogin ? "Enter your password" : "Create a password"}
+                                                    placeholder={isLogin ? t('authPasswordPlaceholder') : t('authPasswordCreate')}
                                                     {...field}
                                                     disabled={isLoading}
                                                     className="bg-zinc-950 border-zinc-800 text-white focus:ring-amber-500/50 focus:border-amber-500 pr-10"
@@ -193,7 +200,7 @@ export default function AuthForm() {
                                     name="role"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-zinc-300">I want to...</FormLabel>
+                                            <FormLabel className="text-zinc-300">{t('authIWantTo')}</FormLabel>
                                             <FormControl>
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <Button
@@ -206,7 +213,7 @@ export default function AuthForm() {
                                                         onClick={() => field.onChange('user')}
                                                         disabled={isLoading}
                                                     >
-                                                        Watch Streams
+                                                        {t('authWatchStreams')}
                                                     </Button>
                                                     <Button
                                                         type="button"
@@ -218,7 +225,7 @@ export default function AuthForm() {
                                                         onClick={() => field.onChange('model')}
                                                         disabled={isLoading}
                                                     >
-                                                        Broadcast
+                                                        {t('authBroadcast')}
                                                     </Button>
                                                 </div>
                                             </FormControl>
@@ -236,10 +243,10 @@ export default function AuthForm() {
                                 {isLoading ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        {isLogin ? 'Signing in...' : 'Creating account...'}
+                                        {isLogin ? t('authSigningIn') : t('authCreatingAccount')}
                                     </>
                                 ) : (
-                                    isLogin ? 'Sign in' : 'Create account'
+                                    isLogin ? t('authSignIn') : t('authCreateAccount')
                                 )}
                             </Button>
                         </form>
@@ -247,13 +254,13 @@ export default function AuthForm() {
 
                     <div className="mt-6 text-center">
                         <p className="text-sm text-zinc-400">
-                            {isLogin ? "Don't have an account? " : "Already have an account? "}
+                            {isLogin ? `${t('authNoAccount')} ` : `${t('authHaveAccount')} `}
                             <button
                                 type="button"
                                 onClick={toggleMode}
                                 className="font-medium text-amber-500 hover:text-amber-400 hover:underline focus:outline-none"
                             >
-                                {isLogin ? 'Sign up' : 'Sign in'}
+                                {isLogin ? t('authSignUp') : t('authSignIn')}
                             </button>
                         </p>
                     </div>
