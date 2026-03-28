@@ -64,10 +64,13 @@ const LiveStreamPlayer: React.FC<LiveStreamPlayerProps> = ({ streamId }) => {
       hls.on(Hls.Events.ERROR, (_: any, data: any) => {
         if (destroyed) return;
         if (data.fatal) {
-          if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-            setErrorMsg('Stream not available or not yet started.');
+          const is404 = data.response?.code === 404
+          if (is404) {
+            setErrorMsg('This stream is not live yet. Start the broadcast first.')
+          } else if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+            setErrorMsg(`Network error loading stream (${data.details}). Check your connection.`)
           } else {
-            setErrorMsg('Playback error. The stream may have ended.');
+            setErrorMsg(`Playback error: ${data.details}`)
           }
           setStatus('error');
         }
