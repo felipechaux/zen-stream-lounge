@@ -31,6 +31,16 @@ export function useStreamerSignaling(streamId: string) {
     setReady(false)
     const supabase = createClient()
 
+    // Fetch any requests that came in before we subscribed
+    supabase
+      .from('call_requests')
+      .select('*')
+      .eq('stream_id', streamId)
+      .eq('status', 'pending')
+      .then(({ data }) => {
+        if (data && data.length > 0) setPending(data as CallRequest[])
+      })
+
     const ch = supabase
       .channel(`streamer-calls:${streamId}`)
       // New pending requests arriving
@@ -46,11 +56,11 @@ export function useStreamerSignaling(streamId: string) {
           const row = payload.new as CallRequest
           if (row.status !== 'pending') return
           setPending(prev =>
-            prev.find(r => r.viewer_id === row.viewer_id) ? prev : [...prev, row]
+            prev.find(r => r.id === row.id) ? prev : [...prev, row]
           )
         },
       )
-      // Viewer cancels their pending request
+      // Viewer cancels / streamer ends call
       .on(
         'postgres_changes',
         {
@@ -61,13 +71,24 @@ export function useStreamerSignaling(streamId: string) {
         },
         (payload) => {
           const row = payload.new as CallRequest
-          if (row.status === 'ended') {
+          if (row.status === 'ended' || row.status === 'rejected') {
             setPending(prev => prev.filter(r => r.id !== row.id))
             setActiveCall(prev => prev?.id === row.id ? null : prev)
           }
         },
       )
       .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          // Re-sync pending list on (re)connect in case we missed events
+          supabase
+            .from('call_requests')
+            .select('*')
+            .eq('stream_id', streamId)
+            .eq('status', 'pending')
+            .then(({ data }) => {
+              if (data) setPending(data as CallRequest[])
+            })
+        }
         setReady(status === 'SUBSCRIBED')
       })
 
@@ -133,7 +154,13 @@ export function useViewerSignaling(
     setReady(false)
     const supabase = createClient()
 
-    // Subscribe to updates on our own viewer_id rows for this stream
+    const applyRow = (row: CallRequest) => {
+      if (row.stream_id !== streamId) return
+      if (row.status === 'accepted') setStatus('in-call')
+      else if (row.status === 'rejected') setStatus('rejected')
+      else if (row.status === 'ended') setStatus('idle')
+    }
+
     const ch = supabase
       .channel(`viewer-call:${streamId}:${viewerId}`)
       .on(
@@ -144,15 +171,24 @@ export function useViewerSignaling(
           table: 'call_requests',
           filter: `viewer_id=eq.${viewerId}`,
         },
-        (payload) => {
-          const row = payload.new as CallRequest
-          if (row.stream_id !== streamId) return
-          if (row.status === 'accepted') setStatus('in-call')
-          else if (row.status === 'rejected') setStatus('rejected')
-          else if (row.status === 'ended') setStatus('idle')
-        },
+        (payload) => applyRow(payload.new as CallRequest),
       )
-      .subscribe((s) => {
+      .subscribe(async (s) => {
+        if (s === 'SUBSCRIBED') {
+          // Check if our request was already actioned before we connected
+          const { data } = await supabase
+            .from('call_requests')
+            .select('*')
+            .eq('viewer_id', viewerId)
+            .eq('stream_id', streamId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single()
+          if (data) {
+            requestIdRef.current = requestIdRef.current ?? data.id
+            applyRow(data as CallRequest)
+          }
+        }
         setReady(s === 'SUBSCRIBED')
       })
 
