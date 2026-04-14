@@ -3,35 +3,34 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { useLanguage } from '@/contexts/LanguageContext'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { BarChart3, Users, DollarSign, Clock, Video, Radio, Activity, TrendingUp } from 'lucide-react'
+import { BarChart3, Users, DollarSign, Clock, Video, Radio, Activity, TrendingUp, Settings } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
-
-const analyticsData = [
-    { name: 'Day 1', viewers: 400 },
-    { name: 'Day 5', viewers: 300 },
-    { name: 'Day 10', viewers: 550 },
-    { name: 'Day 15', viewers: 450 },
-    { name: 'Day 20', viewers: 700 },
-    { name: 'Day 25', viewers: 600 },
-    { name: 'Day 30', viewers: 900 },
-]
-
 import Header from '@/components/layout/Header'
 
 export default function DashboardPage() {
     const { user, profile, role, loading } = useAuth()
+    const { t } = useLanguage()
     const router = useRouter()
+
+    const analyticsData = [
+        { name: `${t('dashDay')} 1`,  viewers: 400 },
+        { name: `${t('dashDay')} 5`,  viewers: 300 },
+        { name: `${t('dashDay')} 10`, viewers: 550 },
+        { name: `${t('dashDay')} 15`, viewers: 450 },
+        { name: `${t('dashDay')} 20`, viewers: 700 },
+        { name: `${t('dashDay')} 25`, viewers: 600 },
+        { name: `${t('dashDay')} 30`, viewers: 900 },
+    ]
 
     useEffect(() => {
         if (!loading) {
             if (!user) {
                 router.push('/auth')
             } else if (profile !== null && role !== 'model') {
-                // Only redirect once profile is confirmed — avoids a loop
-                // where profile is still null while the async fetch is in flight.
                 router.push('/')
             }
         }
@@ -42,7 +41,7 @@ export default function DashboardPage() {
             <div className="min-h-screen pt-24 px-4 flex items-center justify-center bg-zinc-950">
                 <div className="text-amber-500 animate-pulse flex items-center">
                     <Activity className="w-5 h-5 mr-2 animate-spin" />
-                    Loading studio...
+                    {t('dashLoadingStudio')}
                 </div>
             </div>
         )
@@ -56,19 +55,19 @@ export default function DashboardPage() {
                     {/* Dashboard Header */}
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-zinc-800 pb-8">
                         <div>
-                            <h1 className="text-3xl font-bold text-white mb-2">Creator Studio</h1>
-                            <p className="text-zinc-400">Manage your streams, view analytics, and grow your audience.</p>
+                            <h1 className="text-3xl font-bold text-white mb-2">{t('dashCreatorStudio')}</h1>
+                            <p className="text-zinc-400">{t('dashSubtitle')}</p>
                         </div>
                         <div className="flex gap-4">
                             <Link href="/profile">
                                 <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white">
-                                    View Profile
+                                    {t('dashViewProfile')}
                                 </Button>
                             </Link>
                             <Link href="/streaming">
                                 <Button className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold shadow-lg shadow-amber-900/20">
                                     <Radio className="w-4 h-4 mr-2" />
-                                    Go Live Now
+                                    {t('dashGoLiveNow')}
                                 </Button>
                             </Link>
                         </div>
@@ -77,25 +76,25 @@ export default function DashboardPage() {
                     {/* Quick Stats Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <StatCard
-                            title="Total Views"
+                            title={t('dashTotalViews')}
                             value="12.5k"
                             change="+12%"
                             icon={<BarChart3 className="w-5 h-5 text-amber-500" />}
                         />
                         <StatCard
-                            title="Active Followers"
+                            title={t('dashActiveFollowers')}
                             value="843"
                             change="+5%"
                             icon={<Users className="w-5 h-5 text-blue-500" />}
                         />
                         <StatCard
-                            title="Total Earnings"
+                            title={t('dashTotalEarnings')}
                             value="$1,240.50"
                             change="+8.2%"
                             icon={<DollarSign className="w-5 h-5 text-emerald-500" />}
                         />
                         <StatCard
-                            title="Stream Hours"
+                            title={t('dashStreamHours')}
                             value="48.5h"
                             change="+2.1h"
                             icon={<Clock className="w-5 h-5 text-purple-500" />}
@@ -110,20 +109,15 @@ export default function DashboardPage() {
                                 <CardHeader>
                                     <CardTitle className="text-white flex items-center">
                                         <TrendingUp className="w-5 h-5 mr-2 text-amber-500" />
-                                        Viewer Engagement
+                                        {t('dashViewerEngagement')}
                                     </CardTitle>
-                                    <CardDescription className="text-zinc-400">Live viewer trends over the last 30 days</CardDescription>
+                                    <CardDescription className="text-zinc-400">{t('dashViewerTrends')}</CardDescription>
                                 </CardHeader>
                                 <CardContent className="h-80 w-full pt-4">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <AreaChart
                                             data={analyticsData}
-                                            margin={{
-                                                top: 5,
-                                                right: 10,
-                                                left: 0,
-                                                bottom: 0,
-                                            }}
+                                            margin={{ top: 5, right: 10, left: 0, bottom: 0 }}
                                         >
                                             <defs>
                                                 <linearGradient id="colorViewers" x1="0" y1="0" x2="0" y2="1">
@@ -131,33 +125,14 @@ export default function DashboardPage() {
                                                     <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
                                                 </linearGradient>
                                             </defs>
-                                            <XAxis
-                                                dataKey="name"
-                                                stroke="#52525b"
-                                                fontSize={12}
-                                                tickLine={false}
-                                                axisLine={false}
-                                            />
-                                            <YAxis
-                                                stroke="#52525b"
-                                                fontSize={12}
-                                                tickLine={false}
-                                                axisLine={false}
-                                                tickFormatter={(value) => `${value}`}
-                                            />
+                                            <XAxis dataKey="name" stroke="#52525b" fontSize={12} tickLine={false} axisLine={false} />
+                                            <YAxis stroke="#52525b" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}`} />
                                             <Tooltip
                                                 contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', borderRadius: '8px' }}
                                                 itemStyle={{ color: '#fbbf24' }}
                                                 labelStyle={{ color: '#a1a1aa' }}
                                             />
-                                            <Area
-                                                type="monotone"
-                                                dataKey="viewers"
-                                                stroke="#f59e0b"
-                                                fillOpacity={1}
-                                                fill="url(#colorViewers)"
-                                                strokeWidth={2}
-                                            />
+                                            <Area type="monotone" dataKey="viewers" stroke="#f59e0b" fillOpacity={1} fill="url(#colorViewers)" strokeWidth={2} />
                                         </AreaChart>
                                     </ResponsiveContainer>
                                 </CardContent>
@@ -166,7 +141,7 @@ export default function DashboardPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <Card className="bg-zinc-900 border-zinc-800">
                                     <CardHeader>
-                                        <CardTitle className="text-lg text-white">Recent Sessions</CardTitle>
+                                        <CardTitle className="text-lg text-white">{t('dashRecentSessions')}</CardTitle>
                                     </CardHeader>
                                     <CardContent>
                                         <div className="space-y-4">
@@ -177,22 +152,23 @@ export default function DashboardPage() {
                                                             <Video className="w-4 h-4 text-zinc-400" />
                                                         </div>
                                                         <div>
-                                                            <p className="text-sm font-medium text-white">Chill Stream #{i}</p>
-                                                            <p className="text-xs text-zinc-500">2 days ago • 2h 15m</p>
+                                                            <p className="text-sm font-medium text-white">{t('dashChillStream')} #{i}</p>
+                                                            <p className="text-xs text-zinc-500">{t('dashDaysAgo')}</p>
                                                         </div>
                                                     </div>
                                                     <div className="text-right">
                                                         <p className="text-sm font-bold text-white">1.2k</p>
-                                                        <p className="text-xs text-zinc-500">Views</p>
+                                                        <p className="text-xs text-zinc-500">{t('dashViews')}</p>
                                                     </div>
                                                 </div>
                                             ))}
                                         </div>
                                     </CardContent>
                                 </Card>
+
                                 <Card className="bg-zinc-900 border-zinc-800">
                                     <CardHeader>
-                                        <CardTitle className="text-lg text-white">Top Donators</CardTitle>
+                                        <CardTitle className="text-lg text-white">{t('dashTopDonators')}</CardTitle>
                                     </CardHeader>
                                     <CardContent>
                                         <div className="space-y-4">
@@ -204,7 +180,7 @@ export default function DashboardPage() {
                                                         </div>
                                                         <div>
                                                             <p className="text-sm font-medium text-white">User_{i * 99}</p>
-                                                            <p className="text-xs text-zinc-500">Total Tips</p>
+                                                            <p className="text-xs text-zinc-500">{t('dashTotalTips')}</p>
                                                         </div>
                                                     </div>
                                                     <div className="text-right">
@@ -218,33 +194,33 @@ export default function DashboardPage() {
                             </div>
                         </div>
 
-                        {/* Sidebar / Quick Actions - Takes 1 column */}
+                        {/* Sidebar / Quick Actions */}
                         <div className="space-y-6">
                             <Card className="bg-zinc-900 border-zinc-800">
                                 <CardHeader>
-                                    <CardTitle className="text-white">Quick Actions</CardTitle>
+                                    <CardTitle className="text-white">{t('dashQuickActions')}</CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-3">
                                     <Button variant="outline" className="w-full justify-start border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white">
                                         <Settings className="w-4 h-4 mr-2" />
-                                        Stream Settings
+                                        {t('dashStreamSettings')}
                                     </Button>
                                     <Button variant="outline" className="w-full justify-start border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white">
                                         <Video className="w-4 h-4 mr-2" />
-                                        Schedule Stream
+                                        {t('dashScheduleStream')}
                                     </Button>
                                     <Button variant="outline" className="w-full justify-start border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white">
                                         <Users className="w-4 h-4 mr-2" />
-                                        Manage Moderators
+                                        {t('dashManageModerators')}
                                     </Button>
                                 </CardContent>
                             </Card>
 
                             <div className="p-6 rounded-xl bg-gradient-to-br from-indigo-900/50 to-purple-900/50 border border-indigo-500/20">
-                                <h3 className="text-lg font-bold text-white mb-2">Pro Tips</h3>
-                                <p className="text-sm text-indigo-200 mb-4">Engage with your audience by setting up a poll in your next stream!</p>
+                                <h3 className="text-lg font-bold text-white mb-2">{t('dashProTips')}</h3>
+                                <p className="text-sm text-indigo-200 mb-4">{t('dashProTipsText')}</p>
                                 <Button size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-white border-none w-full">
-                                    Learn More
+                                    {t('dashLearnMore')}
                                 </Button>
                             </div>
                         </div>
@@ -255,7 +231,7 @@ export default function DashboardPage() {
     )
 }
 
-function StatCard({ title, value, change, icon }: { title: string, value: string, change: string, icon: React.ReactNode }) {
+function StatCard({ title, value, change, icon }: { title: string; value: string; change: string; icon: React.ReactNode }) {
     return (
         <Card className="bg-zinc-900 border-zinc-800">
             <CardContent className="p-6">
@@ -275,5 +251,3 @@ function StatCard({ title, value, change, icon }: { title: string, value: string
         </Card>
     )
 }
-
-import { Settings } from 'lucide-react'
