@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react'
+import { Eye, EyeOff, Loader2, ArrowLeft, Mail } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import Link from 'next/link'
@@ -27,9 +27,10 @@ export default function AuthForm() {
     const [showPassword, setShowPassword] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [signedUpEmail, setSignedUpEmail] = useState<string | null>(null)
     const router = useRouter()
     const searchParams = useSearchParams()
-    const { signIn, signUp } = useAuth()
+    const { user, role, loading, signIn, signUp } = useAuth()
     const { t } = useLanguage()
 
     const authSchema = z.object({
@@ -42,7 +43,20 @@ export default function AuthForm() {
     useEffect(() => {
         if (searchParams.get('mode') === 'signup') setIsLogin(false)
         if (searchParams.get('error')) setError(t('authExpiredLink'))
-    }, [searchParams])
+    }, [searchParams, t])
+
+    // Single redirect guard: handles both "already logged in" and "just signed in" cases
+    useEffect(() => {
+        // Wait for auth to finish (includes profile fetch)
+        if (loading) return
+
+        // Redirect once auth is resolved — profile may be null if fetch failed,
+        // but we still redirect; role defaults to null → non-model path
+        if (user) {
+            const redirectTo = searchParams.get('redirect') || '/'
+            router.replace(role === 'model' ? '/dashboard' : redirectTo)
+        }
+    }, [loading, user, role, router, searchParams])
 
     const form = useForm<AuthFormValues>({
         resolver: zodResolver(authSchema),
@@ -61,19 +75,44 @@ export default function AuthForm() {
         try {
             if (isLogin) {
                 const { error } = await signIn(values.email, values.password)
-                if (error) throw error
-                router.push('/')
+                if (error) {
+                    if (error.message?.toLowerCase().includes('email not confirmed')) {
+                        throw new Error('Please confirm your email first. Check your inbox for the activation link.')
+                    }
+                    if (error.message?.toLowerCase().includes('invalid login credentials')) {
+                        throw new Error('Incorrect email or password.')
+                    }
+                    if (error.message?.toLowerCase().includes('rate limit') || error.status === 429) {
+                        throw new Error('Too many attempts. Please wait a few minutes before trying again.')
+                    }
+                    throw error
+                }
+                // Success: onAuthStateChange will update auth state, then the guard effect redirects
             } else {
                 if (!values.fullName) {
                     form.setError('fullName', { message: t('authFullNameRequired') })
                     throw new Error('Full name is required')
                 }
                 const { error } = await signUp(values.email, values.password, values.role, values.fullName)
-                if (error) throw error
-                // You might want to show a success message or redirect
+                if (error) {
+                    if (
+                        error.message?.toLowerCase().includes('rate limit') ||
+                        error.message?.toLowerCase().includes('email rate limit') ||
+                        error.status === 429
+                    ) {
+                        throw new Error('Too many sign-up attempts. Please wait a few minutes and try again.')
+                    }
+                    throw error
+                }
+                // With auto-confirm enabled, Supabase auto-signs in the user
+                // onAuthStateChange will fire SIGNED_IN, then the guard redirects
             }
         } catch (err: any) {
-            setError(err.message || t('authUnexpectedError'))
+            const msg =
+                typeof err === 'string'
+                    ? err
+                    : err?.message || err?.error_description || err?.msg
+            setError(msg || t('authUnexpectedError'))
         } finally {
             setIsLoading(false)
         }
@@ -83,6 +122,38 @@ export default function AuthForm() {
         setIsLogin(!isLogin)
         setError(null)
         form.reset()
+    }
+
+    if (signedUpEmail) {
+        return (
+            <div className="w-full max-w-md space-y-6">
+                <Link
+                    href="/"
+                    className="inline-flex items-center text-sm text-zinc-400 hover:text-amber-500 transition-colors"
+                >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    {t('authBackLink')}
+                </Link>
+                <Card className="shadow-2xl bg-zinc-900 border-zinc-800">
+                    <CardContent className="pt-10 pb-10 flex flex-col items-center gap-5 text-center">
+                        <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                            <Mail className="h-7 w-7 text-amber-500" />
+                        </div>
+                        <div className="space-y-2">
+                            <h2 className="text-xl font-bold text-white">Check your inbox</h2>
+                            <p className="text-zinc-400 text-sm max-w-xs">
+                                We sent a confirmation link to{' '}
+                                <span className="text-amber-400 font-medium">{signedUpEmail}</span>.
+                                Click it to activate your account and start streaming.
+                            </p>
+                        </div>
+                        <p className="text-zinc-600 text-xs">
+                            Didn&apos;t get it? Check your spam folder.
+                        </p>
+                    </CardContent>
+                </Card>
+            </div>
+        )
     }
 
     return (

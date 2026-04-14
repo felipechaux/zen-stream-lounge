@@ -1,220 +1,214 @@
-'use client';
+'use client'
 
-import React, { useEffect, useRef, useState } from 'react';
-import AntMediaProvider, { useAntMedia } from './AntMediaProvider';
+import React, { useEffect, useState } from 'react'
+import {
+  Video, VideoOff, PhoneOff, Clock, UserCheck, UserX, Wifi, WifiOff,
+} from 'lucide-react'
+import { useStreamerSignaling, CallRequest } from '@/hooks/usePrivateCallSignaling'
+import AntMediaProvider, { useAntMedia } from './AntMediaProvider'
 
-interface OneToOneCallProps {
-    streamId: string; // The ID for this user's stream
-    peerStreamId: string; // The ID for the peer's stream
+// ── Streamer local tile ───────────────────────────────────────────────────────
+function StreamerLocalTile({ streamId }: { streamId: string }) {
+  const { isConnected, publish, stop } = useAntMedia()
+  const [active, setActive] = useState(false)
+
+  useEffect(() => {
+    if (isConnected && !active) {
+      publish(streamId)
+      setActive(true)
+    }
+    return () => { if (active) stop(streamId) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConnected])
+
+  return (
+    <div className="relative aspect-video bg-zinc-900 rounded-xl overflow-hidden border border-white/[0.07]">
+      <video id="localVideo-p2p" autoPlay muted playsInline className="w-full h-full object-cover" />
+      {!active && (
+        <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/80">
+          <VideoOff className="h-6 w-6 text-zinc-700" />
+        </div>
+      )}
+      <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded-full text-xs text-white border border-white/[0.08]">
+        <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-red-500 animate-pulse' : 'bg-zinc-600'}`} />
+        You
+      </div>
+      <div className="absolute top-2 right-2">
+        {isConnected
+          ? <Wifi className="h-3 w-3 text-emerald-400" />
+          : <WifiOff className="h-3 w-3 text-zinc-600" />
+        }
+      </div>
+    </div>
+  )
 }
 
-// Sub-component for the Publisher (Local Camera) side
-const PublisherSection = ({
-    streamId,
-    setStreamId,
-    isPublishing,
-    setIsPublishing
-}: {
-    streamId: string,
-    setStreamId: (id: string) => void,
-    isPublishing: boolean,
-    setIsPublishing: (v: boolean) => void
-}) => {
-    const { webRTCAdaptor, isConnected, publish, stop, error: antError } = useAntMedia();
-    const localVideoRef = useRef<HTMLVideoElement>(null);
+// ── Viewer remote tile ────────────────────────────────────────────────────────
+function ViewerRemoteTile({ streamId, displayName }: { streamId: string; displayName: string }) {
+  const { isConnected, play, stop } = useAntMedia()
+  const [started, setStarted] = useState(false)
 
-    // Effect to attach local stream to video element when ready
-    useEffect(() => {
-        // For local stream, we usually need to wait for 'initialized' or just attach user media directly if handled outside
-        // But AntMedia SDK's publish often handles the getUserMedia. 
-        // We'll rely on the adaptor to handle the stream, or simpler: 
-        // The SDK usually attaches the local stream to the element with `localVideoId` automatically upon opening the camera.
-        // We just need to make sure the ID matches.
-    }, [webRTCAdaptor]);
+  useEffect(() => {
+    if (isConnected && !started) {
+      play(streamId)
+      setStarted(true)
+    }
+    return () => { if (started) stop(streamId) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConnected])
 
-    return (
-        <div className="flex-1 w-full">
-            <div className="bg-gray-800 p-4 rounded-lg mb-4">
-                <label className="block text-sm text-gray-400 mb-2">My Stream ID</label>
-                <input
-                    type="text"
-                    value={streamId}
-                    onChange={(e) => setStreamId(e.target.value)}
-                    className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
-                    disabled={isPublishing}
-                />
-                <p className="text-xs text-gray-500 mt-1">Share this IDs with your peer</p>
-            </div>
-
-            <div className="aspect-video bg-black rounded-lg overflow-hidden border border-gray-700 relative mb-4">
-                <video
-                    id="localVideo" // Must match localVideoId in AntMediaProvider config
-                    ref={localVideoRef}
-                    autoPlay
-                    muted
-                    playsInline
-                    className="w-full h-full object-cover"
-                />
-                {!isPublishing && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-gray-400">
-                        Camera Offline
-                    </div>
-                )}
-                {/* Overlay Status */}
-                <h3 className="absolute top-2 left-2 bg-black/50 px-2 rounded z-10 text-sm">
-                    You {isConnected ? '(Ready)' : '(Connecting...)'}
-                </h3>
-            </div>
-
-            {!isPublishing ? (
-                <button
-                    onClick={() => {
-                        publish(streamId);
-                        setIsPublishing(true);
-                    }}
-                    disabled={!isConnected}
-                    className="bg-green-600 hover:bg-green-700 px-6 py-2 rounded-lg font-semibold disabled:opacity-50 w-full"
-                >
-                    Start Camera
-                </button>
-            ) : (
-                <button
-                    onClick={() => {
-                        stop(streamId);
-                        setIsPublishing(false);
-                    }}
-                    className="bg-red-600 hover:bg-red-700 px-6 py-2 rounded-lg font-semibold w-full"
-                >
-                    Stop Camera
-                </button>
-            )}
-            {antError && <div className="text-red-400 text-xs mt-2">{antError}</div>}
+  return (
+    <div className="relative aspect-video bg-zinc-900 rounded-xl overflow-hidden border border-white/[0.07]">
+      <video id="remoteVideo-p2p" autoPlay playsInline className="w-full h-full object-cover" />
+      {!started && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-zinc-900/80">
+          <Video className="h-6 w-6 text-zinc-700" />
+          <span className="text-zinc-600 text-xs">Connecting…</span>
         </div>
-    );
-};
+      )}
+      <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded-full text-xs text-white border border-white/[0.08]">
+        <span className={`w-1.5 h-1.5 rounded-full ${started ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-600'}`} />
+        {displayName}
+      </div>
+    </div>
+  )
+}
 
-// Sub-component for the Player (Remote Peer) side
-const PlayerSection = ({
-    streamId,
-    setStreamId,
-    isPlaying,
-    setIsPlaying
+// ── Incoming request card ─────────────────────────────────────────────────────
+function RequestCard({
+  request,
+  onAccept,
+  onReject,
 }: {
-    streamId: string,
-    setStreamId: (id: string) => void,
-    isPlaying: boolean,
-    setIsPlaying: (v: boolean) => void
-}) => {
-    const { webRTCAdaptor, isConnected, play, stop, error: antError } = useAntMedia();
-    const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  request: CallRequest
+  onAccept: () => void
+  onReject: () => void
+}) {
+  return (
+    <div
+      className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-amber-500/20"
+      style={{ background: 'rgba(245,158,11,0.06)' }}
+    >
+      <div className="w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center flex-shrink-0">
+        <span className="text-amber-400 text-xs font-bold">
+          {request.viewer_name.charAt(0).toUpperCase()}
+        </span>
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-white text-sm font-medium truncate">{request.viewer_name}</p>
+        <p className="text-zinc-500 text-xs">Private call request</p>
+      </div>
+      <div className="flex flex-col gap-1 flex-shrink-0">
+        <button
+          onClick={onAccept}
+          className="flex items-center gap-1 h-7 px-2.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 text-black font-bold text-xs transition-all duration-200"
+        >
+          <UserCheck className="h-3 w-3" />
+          Accept
+        </button>
+        <button
+          onClick={onReject}
+          className="flex items-center gap-1 h-7 px-2.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-xs border border-white/[0.07] transition-all duration-200"
+        >
+          <UserX className="h-3 w-3" />
+          Decline
+        </button>
+      </div>
+    </div>
+  )
+}
 
+// ── Main component ────────────────────────────────────────────────────────────
+interface OneToOneCallProps {
+  streamId: string
+}
+
+export default function OneToOneCall({ streamId }: OneToOneCallProps) {
+  const { pending, activeCall, ready, accept, reject, endCall } = useStreamerSignaling(streamId)
+
+  const hostStreamId   = `priv-${streamId}-host`
+  const viewerStreamId = activeCall ? `priv-${streamId}-viewer-${activeCall.viewer_id}` : ''
+
+  // ── Active call ───────────────────────────────────────────────────────────
+  if (activeCall) {
     return (
-        <div className="flex-1 w-full">
-            <div className="bg-gray-800 p-4 rounded-lg mb-4">
-                <label className="block text-sm text-gray-400 mb-2">Peer Stream ID</label>
-                <input
-                    type="text"
-                    value={streamId}
-                    onChange={(e) => setStreamId(e.target.value)}
-                    className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
-                    disabled={isPlaying}
-                />
-                <p className="text-xs text-gray-500 mt-1">Enter peer&apos;s ID to connect</p>
-            </div>
-
-            <div className="aspect-video bg-black rounded-lg overflow-hidden border border-gray-700 relative mb-4">
-                {/* Note: The ID here is critical for the SDK to attach the remote stream */}
-                <video
-                    id="remoteVideo"
-                    ref={remoteVideoRef}
-                    autoPlay
-                    playsInline
-                    className="w-full h-full object-cover"
-                />
-                {!isPlaying && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-gray-400">
-                        Peer Offline
-                    </div>
-                )}
-                <h3 className="absolute top-2 left-2 bg-black/50 px-2 rounded z-10 text-sm">
-                    Peer {isConnected ? '(Ready)' : '(Connecting...)'}
-                </h3>
-            </div>
-
-            {!isPlaying ? (
-                <button
-                    onClick={() => {
-                        play(streamId);
-                        setIsPlaying(true);
-                    }}
-                    disabled={!isConnected}
-                    className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg font-semibold disabled:opacity-50 w-full"
-                >
-                    Connect to Peer
-                </button>
-            ) : (
-                <button
-                    onClick={() => {
-                        stop(streamId);
-                        setIsPlaying(false);
-                    }}
-                    className="bg-red-600 hover:bg-red-700 px-6 py-2 rounded-lg font-semibold w-full"
-                >
-                    Disconnect Peer
-                </button>
-            )}
-            {antError && <div className="text-red-400 text-xs mt-2">{antError}</div>}
-        </div>
-    );
-};
-
-
-export default function OneToOneCall({ streamId, peerStreamId }: OneToOneCallProps) {
-    // Shared state management is done here, but execution is delegated to isolated providers
-    const [localStreamId, setLocalStreamId] = useState(streamId || '');
-    const [remoteStreamId, setRemoteStreamId] = useState(peerStreamId || 'user-2');
-
-    // Track status for main UI feedback (optional, or could be pushed down)
-    const [isPublishing, setIsPublishing] = useState(false);
-    const [isPlaying, setIsPlaying] = useState(false);
-
-    useEffect(() => {
-        if (!streamId && !localStreamId) {
-            setLocalStreamId(`user-${Math.floor(Math.random() * 10000)}`);
-        }
-    }, [streamId, localStreamId]);
-
-    return (
-        <div className="flex flex-col gap-4 p-4 border rounded-lg bg-gray-900 text-white max-w-5xl mx-auto">
-            <h2 className="text-xl font-bold mb-4">1-to-1 Video Call (Dual Channel)</h2>
-            <p className="text-sm text-gray-400 mb-6">
-                Establishing two separate secure connections for optimal stability.
+      <div
+        className="rounded-2xl border border-white/[0.06] overflow-hidden"
+        style={{ background: 'var(--glass-bg)' }}
+      >
+        {/* Panel header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
+          <div>
+            <p className="text-white text-sm font-semibold">Private Call</p>
+            <p className="text-xs flex items-center gap-1.5 text-zinc-500 mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              {activeCall.viewer_name}
             </p>
-
-            <div className="flex flex-col md:flex-row gap-4 md:gap-8">
-                {/* Left Side: Publisher (My Camera) */}
-                <AntMediaProvider role="publisher">
-                    <PublisherSection
-                        streamId={localStreamId}
-                        setStreamId={setLocalStreamId}
-                        isPublishing={isPublishing}
-                        setIsPublishing={setIsPublishing}
-                    />
-                </AntMediaProvider>
-
-                {/* Vertical Divider */}
-                <div className="hidden md:block w-px bg-gray-700 self-stretch"></div>
-
-                {/* Right Side: Player (Peer's Camera) */}
-                <AntMediaProvider role="player">
-                    <PlayerSection
-                        streamId={remoteStreamId}
-                        setStreamId={setRemoteStreamId}
-                        isPlaying={isPlaying}
-                        setIsPlaying={setIsPlaying}
-                    />
-                </AntMediaProvider>
-            </div>
+          </div>
+          <button
+            onClick={endCall}
+            className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition-all duration-200"
+          >
+            <PhoneOff className="h-3 w-3" />
+            End
+          </button>
         </div>
-    );
+
+        {/* Stacked video tiles — viewer on top (bigger), streamer below (smaller) */}
+        <div className="p-3 space-y-2">
+          <AntMediaProvider role="player" remoteVideoId="remoteVideo-p2p">
+            <ViewerRemoteTile streamId={viewerStreamId} displayName={activeCall.viewer_name} />
+          </AntMediaProvider>
+          <AntMediaProvider role="publisher" localVideoId="localVideo-p2p">
+            <StreamerLocalTile streamId={hostStreamId} />
+          </AntMediaProvider>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Waiting room panel ────────────────────────────────────────────────────
+  return (
+    <div
+      className="rounded-2xl border border-white/[0.06] overflow-hidden"
+      style={{ background: 'var(--glass-bg)' }}
+    >
+      {/* Panel header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
+        <p className="text-white text-sm font-semibold">Private Calls</p>
+        <div className="flex items-center gap-1.5">
+          <span className={`w-1.5 h-1.5 rounded-full ${ready ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-600'}`} />
+          <span className="text-zinc-500 text-xs">{ready ? 'Listening' : 'Connecting…'}</span>
+        </div>
+      </div>
+
+      {/* Request list or empty state */}
+      <div className="p-3">
+        {pending.length > 0 ? (
+          <div className="space-y-2">
+            {pending.map(req => (
+              <RequestCard
+                key={req.id}
+                request={req}
+                onAccept={() => accept(req)}
+                onReject={() => reject(req.id)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-10 gap-3 text-center">
+            <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center">
+              <Clock className="h-5 w-5 text-zinc-600" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-zinc-400 text-xs font-medium">No requests yet</p>
+              <p className="text-zinc-600 text-xs max-w-[180px]">
+                Viewers watching your stream can request a private call here.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }

@@ -24,6 +24,15 @@ const LiveStreamPlayer: React.FC<LiveStreamPlayerProps> = ({ streamId }) => {
     let destroyed = false;
 
     const initHls = async () => {
+      // hls.js AutoPIP tries to register 'enterpictureinpicture' which is only
+      // supported in Chrome 120+. Patch MediaSession to silently swallow it.
+      if (typeof navigator !== 'undefined' && navigator.mediaSession) {
+        const orig = navigator.mediaSession.setActionHandler.bind(navigator.mediaSession)
+        navigator.mediaSession.setActionHandler = (action, handler) => {
+          try { orig(action, handler) } catch (_) {}
+        }
+      }
+
       const Hls = (await import('hls.js')).default;
       const video = videoRef.current;
       if (!video || destroyed) return;

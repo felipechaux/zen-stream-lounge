@@ -25,14 +25,18 @@ export function useAntMedia() {
 
 interface AntMediaProviderProps {
   children: React.ReactNode;
-  websocketUrl?: string; // Optional override
-  role?: 'publisher' | 'player' | 'p2p'; // Default is 'publisher'
+  websocketUrl?: string;
+  role?: 'publisher' | 'player' | 'p2p';
+  localVideoId?: string;  // DOM element ID for local camera preview (default: 'localVideo')
+  remoteVideoId?: string; // DOM element ID for remote stream (default: 'remoteVideo')
 }
 
 export default function AntMediaProvider({
   children,
   websocketUrl,
-  role = 'publisher'
+  role = 'publisher',
+  localVideoId = 'localVideo',
+  remoteVideoId = 'remoteVideo',
 }: AntMediaProviderProps) {
   const [webRTCAdaptor, setWebRTCAdaptor] = useState<any>(null);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -104,7 +108,7 @@ export default function AntMediaProvider({
           mediaConstraints: mediaConstraints,
           peerconnection_config: { iceServers },
           sdp_constraints: sdpConstraints,
-          localVideoId: "localVideo", // These IDs need to be present in the DOM where used, or handled dynamically
+          localVideoId,
           isShow: false, // Don't show by default, let components handle visibility
           debug: true,
           callback: (info: string, obj: any) => {
@@ -114,7 +118,7 @@ export default function AntMediaProvider({
               setIsConnected(true);
               setError(null); // Clear errors on fresh init/reconnect
             } else if (info === "newStreamAvailable") {
-              const videoElement = document.getElementById("remoteVideo") as HTMLVideoElement;
+              const videoElement = document.getElementById(remoteVideoId) as HTMLVideoElement;
               console.log("newStreamAvailable event fired. Obj received:", obj);
 
               let streamToAttach = obj;
@@ -166,9 +170,13 @@ export default function AntMediaProvider({
               setError("Connection lost. Please refresh the page.");
             } else if (errorKey === "notSetRemoteDescription") {
               setMessages(prev => [...prev, `Error: Negotiation failed. Retrying might help.`]);
-              // Do not disconnect, just warn and ask to retry
               console.warn("Ant Media Warning: Remote description not set. Synchronization issue.");
               setError("Connection failed temporarily. Please try pressing Connect again.");
+            } else if (errorKey === "noStreamNameSpecified") {
+              // Benign: server received a command without a stream ID.
+              // This happens when the adaptor is idle (no publish/play called yet)
+              // or when an empty string was passed — safe to ignore as a warning.
+              console.warn("Ant Media: no stream name specified (adaptor idle or empty stream ID)");
             } else {
               setMessages(prev => [...prev, `Error: ${errorKey} - ${message}`]);
               console.error("Ant Media Error:", errorKey, message);
@@ -210,6 +218,10 @@ export default function AntMediaProvider({
   }, [websocketUrl, role]);
 
   const publish = useCallback((streamId: string) => {
+    if (!streamId) {
+      console.warn("WebRTCAdaptor: publish() called with empty stream ID — skipped");
+      return;
+    }
     if (webRTCAdaptor && isInitialized) {
       webRTCAdaptor.publish(streamId, "");
     } else {
@@ -218,6 +230,10 @@ export default function AntMediaProvider({
   }, [webRTCAdaptor, isInitialized]);
 
   const play = useCallback((streamId: string) => {
+    if (!streamId) {
+      console.warn("WebRTCAdaptor: play() called with empty stream ID — skipped");
+      return;
+    }
     if (webRTCAdaptor && isInitialized) {
       webRTCAdaptor.play(streamId, "");
     } else {

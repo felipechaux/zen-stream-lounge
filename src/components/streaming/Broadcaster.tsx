@@ -1,40 +1,26 @@
 'use client';
 
 import React, { useState } from 'react';
+import { Radio, Square, Wifi, WifiOff } from 'lucide-react';
 import { useAntMedia } from './AntMediaProvider';
 
-export default function Broadcaster() {
-    const { isConnected, publish, stop, messages } = useAntMedia();
-    const [streamId, setStreamId] = useState(`stream-${Math.floor(Math.random() * 10000)}`);
+interface BroadcasterProps {
+    streamId?: string
+}
+
+export default function Broadcaster({ streamId: propStreamId }: BroadcasterProps) {
+    const { isConnected, publish, stop } = useAntMedia();
+    const [streamId] = useState(propStreamId || `stream-${Math.floor(Math.random() * 10000)}`);
     const [isPublishing, setIsPublishing] = useState(false);
 
-    const handleStartBroadcast = () => {
-        publish(streamId);
-        setIsPublishing(true);
-    };
-
-    const handleStopBroadcast = () => {
-        stop(streamId);
-        setIsPublishing(false);
-    };
+    const handleStart = () => { publish(streamId); setIsPublishing(true);  };
+    const handleStop  = () => { stop(streamId);    setIsPublishing(false); };
 
     return (
-        <div className="bg-gray-800 p-6 rounded-lg text-white max-w-2xl mx-auto my-8">
-            <h2 className="text-2xl font-bold mb-4">Broadcaster Studio</h2>
+        <div className="max-w-2xl mx-auto space-y-4">
 
-            <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">Stream ID</label>
-                <input
-                    type="text"
-                    value={streamId}
-                    onChange={(e) => setStreamId(e.target.value)}
-                    className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
-                    suppressHydrationWarning
-                />
-            </div>
-
-            <div className="relative bg-black h-96 rounded-lg mb-4 overflow-hidden">
-                {/* Local Preview Video */}
+            {/* Video preview */}
+            <div className="relative aspect-video bg-zinc-900 rounded-2xl overflow-hidden border border-white/[0.07]">
                 <video
                     id="localVideo"
                     autoPlay
@@ -42,53 +28,76 @@ export default function Broadcaster() {
                     playsInline
                     className="w-full h-full object-cover"
                 />
-                <div className="absolute top-4 left-4 flex gap-2">
-                    <span className={`px-2 py-1 rounded text-xs font-bold ${isPublishing ? 'bg-red-600' : 'bg-gray-600'}`}>
-                        {isPublishing ? 'LIVE' : 'OFFLINE'}
-                    </span>
-                </div>
-            </div>
 
-            <div className="flex justify-between items-center">
-                <div className="text-sm text-gray-400">
-                    {isConnected ? 'Server Connected' : 'Disconnected'}
-                </div>
-                <div className="flex gap-4">
-                    {!isPublishing ? (
-                        <button
-                            onClick={handleStartBroadcast}
-                            disabled={!isConnected}
-                            className="bg-green-600 hover:bg-green-700 px-6 py-2 rounded-lg font-semibold disabled:opacity-50"
-                        >
-                            Start Broadcast
-                        </button>
+                {/* Status badge */}
+                <div className="absolute top-3 left-3">
+                    {isPublishing ? (
+                        <div className="flex items-center gap-1.5 bg-red-600/90 backdrop-blur-sm px-3 py-1 rounded-full">
+                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                            <span className="text-white text-xs font-bold uppercase tracking-wider">Live</span>
+                        </div>
                     ) : (
-                        <div className="flex gap-4">
-
-                            <button
-                                onClick={handleStopBroadcast}
-                                className="bg-red-600 hover:bg-red-700 px-6 py-2 rounded-lg font-semibold"
-                            >
-                                Stop Broadcast
-                            </button>
+                        <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full border border-white/[0.08]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-zinc-500" />
+                            <span className="text-zinc-400 text-xs font-medium">Offline</span>
                         </div>
                     )}
                 </div>
+
+                {/* Connection indicator */}
+                <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded-full border border-white/[0.08]">
+                    {isConnected
+                        ? <Wifi className="h-3 w-3 text-emerald-400" />
+                        : <WifiOff className="h-3 w-3 text-zinc-600" />
+                    }
+                    <span className={`text-xs font-medium ${isConnected ? 'text-emerald-400' : 'text-zinc-600'}`}>
+                        {isConnected ? 'Ready' : 'Connecting…'}
+                    </span>
+                </div>
+
+                {/* Offline overlay */}
+                {!isPublishing && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-zinc-900/60">
+                        <Radio className="h-10 w-10 text-zinc-700" />
+                        <span className="text-zinc-500 text-sm">Camera preview will appear here</span>
+                    </div>
+                )}
             </div>
 
+            {/* Controls */}
+            <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2 text-sm">
+                    <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-zinc-600'}`} />
+                    <span className="text-zinc-500">{isConnected ? 'Server connected' : 'Disconnected'}</span>
+                </div>
+
+                {!isPublishing ? (
+                    <button
+                        onClick={handleStart}
+                        disabled={!isConnected}
+                        className="flex items-center gap-2 h-10 px-6 rounded-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black font-bold text-sm shadow-lg shadow-amber-900/25 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    >
+                        <Radio className="h-4 w-4" />
+                        Go Live
+                    </button>
+                ) : (
+                    <button
+                        onClick={handleStop}
+                        className="flex items-center gap-2 h-10 px-6 rounded-full bg-red-600 hover:bg-red-500 text-white font-bold text-sm transition-all duration-200"
+                    >
+                        <Square className="h-3.5 w-3.5 fill-white" />
+                        End Stream
+                    </button>
+                )}
+            </div>
+
+            {/* Live notice */}
             {isPublishing && (
-                <div className="mt-4 p-4 bg-yellow-900/30 border border-yellow-700/50 rounded-lg text-sm text-yellow-200">
-                    <strong>Tip:</strong> Copy your Stream ID <code>{streamId}</code> to share or watch in another tab. Staying in this tab keeps the broadcast live!
+                <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-sm text-zinc-500">
+                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
+                    You are live. Closing or refreshing this tab will end the broadcast.
                 </div>
             )}
-
-            {/* Debug Messages */}
-            <div className="mt-4 p-2 bg-black/30 rounded text-xs h-32 overflow-y-auto font-mono text-gray-400">
-                <div className="font-bold mb-1">Logs:</div>
-                {messages.map((msg, idx) => (
-                    <div key={idx}>{msg}</div>
-                ))}
-            </div>
         </div>
     );
 }

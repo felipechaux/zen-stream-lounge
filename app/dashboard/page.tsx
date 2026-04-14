@@ -22,20 +22,22 @@ const analyticsData = [
 import Header from '@/components/layout/Header'
 
 export default function DashboardPage() {
-    const { user, role, loading } = useAuth()
+    const { user, profile, role, loading } = useAuth()
     const router = useRouter()
 
     useEffect(() => {
         if (!loading) {
             if (!user) {
                 router.push('/auth')
-            } else if (role !== 'model') {
+            } else if (profile !== null && role !== 'model') {
+                // Only redirect once profile is confirmed — avoids a loop
+                // where profile is still null while the async fetch is in flight.
                 router.push('/')
             }
         }
-    }, [user, role, loading, router])
+    }, [user, profile, role, loading, router])
 
-    if (loading || !user || role !== 'model') {
+    if (loading || !user || profile === null || role !== 'model') {
         return (
             <div className="min-h-screen pt-24 px-4 flex items-center justify-center bg-zinc-950">
                 <div className="text-amber-500 animate-pulse flex items-center">
