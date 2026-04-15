@@ -9,7 +9,7 @@ export type CallRequest = {
   stream_id: string
   viewer_id: string
   viewer_name: string
-  status: 'pending' | 'accepted' | 'rejected' | 'ended'
+  status: 'pending' | 'accepted' | 'streaming' | 'rejected' | 'ended'
   created_at: string
 }
 
@@ -156,7 +156,7 @@ export function useViewerSignaling(
 
     const applyRow = (row: CallRequest) => {
       if (row.stream_id !== streamId) return
-      if (row.status === 'accepted') setStatus('in-call')
+      if (row.status === 'accepted' || row.status === 'streaming') setStatus('in-call')
       else if (row.status === 'rejected') setStatus('rejected')
       else if (row.status === 'ended') setStatus('idle')
     }

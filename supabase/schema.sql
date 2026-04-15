@@ -61,7 +61,7 @@ create table public.call_requests (
   stream_id   text not null,
   viewer_id   uuid not null references auth.users(id) on delete cascade,
   viewer_name text not null,
-  status      text check (status in ('pending','accepted','rejected','ended'))
+  status      text check (status in ('pending','accepted','streaming','rejected','ended'))
               not null default 'pending',
   created_at  timestamp with time zone default now()
 );

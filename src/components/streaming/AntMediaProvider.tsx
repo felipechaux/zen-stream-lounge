@@ -47,6 +47,8 @@ export default function AntMediaProvider({
   // We use a local ref to track the adaptor instance for cleanup ensuring we can close it
   // regardless of the async state update.
   const adaptorInstanceRef = useRef<any>(null);
+  // Tracks streams being played so we can retry on no_stream_exist
+  const playRetryRef = useRef<Map<string, { attempt: number; timer: ReturnType<typeof setTimeout> | null }>>(new Map());
 
   useEffect(() => {
     // Determine the URL
@@ -117,6 +119,12 @@ export default function AntMediaProvider({
               setIsInitialized(true);
               setIsConnected(true);
               setError(null); // Clear errors on fresh init/reconnect
+            } else if (info === "play_started") {
+              // Stream is playing — cancel any pending retries for it
+              const streamId: string = obj?.streamId ?? obj ?? ''
+              const entry = playRetryRef.current.get(streamId)
+              if (entry?.timer) clearTimeout(entry.timer)
+              playRetryRef.current.delete(streamId)
             } else if (info === "newStreamAvailable") {
               const videoElement = document.getElementById(remoteVideoId) as HTMLVideoElement;
               console.log("newStreamAvailable event fired. Obj received:", obj);
@@ -154,14 +162,30 @@ export default function AntMediaProvider({
           },
           callbackError: (errorKey: string, message: string) => {
             if (errorKey === "no_stream_exist") {
-              // Log as warning to avoid console error spam in 1-to-1/P2P calls where this is expected initially
-              console.warn("Ant Media Info:", errorKey, "Stream not yet ready");
-              setMessages(prev => [...prev, `Info: Waiting for stream...`]);
+              // AntMedia passes the stream ID as `message` for this error.
+              // Automatically retry play() so publish/play timing races resolve themselves.
+              const streamId: string = message ?? ''
+              const entry = playRetryRef.current.get(streamId)
 
-              if (role === 'p2p') {
-                setError("Waiting for peer to join...");
+              if (entry !== undefined) {
+                const MAX_RETRIES = 15
+                if (entry.attempt < MAX_RETRIES) {
+                  const delay = Math.min(2000 + entry.attempt * 1000, 8000)
+                  console.warn(`[AntMedia] no_stream_exist for "${streamId}" — retry ${entry.attempt + 1}/${MAX_RETRIES} in ${delay}ms`)
+                  if (entry.timer) clearTimeout(entry.timer)
+                  entry.timer = setTimeout(() => {
+                    if (playRetryRef.current.has(streamId) && adaptorInstanceRef.current) {
+                      entry.attempt++
+                      adaptorInstanceRef.current.play(streamId, '')
+                    }
+                  }, delay)
+                } else {
+                  console.warn(`[AntMedia] Stream "${streamId}" unavailable after ${MAX_RETRIES} retries`)
+                  playRetryRef.current.delete(streamId)
+                  setError("Stream is offline or does not exist.")
+                }
               } else {
-                setError("Stream is offline or does not exist.");
+                console.warn(`[AntMedia] no_stream_exist for untracked stream "${streamId}"`)
               }
             } else if (errorKey === "WebSocketNotConnected") {
               setMessages(prev => [...prev, `Error: Connection lost. Please refresh or try again.`]);
@@ -200,9 +224,11 @@ export default function AntMediaProvider({
     initAdaptor();
 
     return () => {
+      // Cancel all pending play retries
+      playRetryRef.current.forEach(entry => { if (entry.timer) clearTimeout(entry.timer) })
+      playRetryRef.current.clear()
+
       if (adaptorInstanceRef.current) {
-        // Use internal method to close if available or stop
-        // The SDK typically has .closeWebSocket()
         try {
           if (adaptorInstanceRef.current.closeWebSocket) {
             adaptorInstanceRef.current.closeWebSocket();
@@ -235,6 +261,8 @@ export default function AntMediaProvider({
       return;
     }
     if (webRTCAdaptor && isInitialized) {
+      // Register for auto-retry on no_stream_exist
+      playRetryRef.current.set(streamId, { attempt: 0, timer: null })
       webRTCAdaptor.play(streamId, "");
     } else {
       console.warn("WebRTCAdaptor not ready to play");
@@ -242,6 +270,11 @@ export default function AntMediaProvider({
   }, [webRTCAdaptor, isInitialized]);
 
   const stop = useCallback((streamId: string) => {
+    // Cancel any pending retry for this stream
+    const entry = playRetryRef.current.get(streamId)
+    if (entry?.timer) clearTimeout(entry.timer)
+    playRetryRef.current.delete(streamId)
+
     if (webRTCAdaptor && isInitialized) {
       webRTCAdaptor.stop(streamId);
     }
