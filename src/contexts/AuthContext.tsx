@@ -22,29 +22,28 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error(`fetchProfile timed out after ${ms}ms`)), ms)
-    ),
-  ])
+const PROFILE_TIMEOUT_MS = 5000
+
+function makeTimeout(ms: number): Promise<never> {
+  return new Promise((_, reject) =>
+    setTimeout(() => reject(new Error(`fetchProfile timed out after ${ms}ms`)), ms)
+  )
 }
 
 async function fetchProfile(supabase: SupabaseClient, userId: string): Promise<Profile | null> {
   try {
-    const { data, error } = await withTimeout(
+    const { data, error } = await Promise.race([
       supabase.from('profiles').select('*').eq('id', userId).single(),
-      5000
-    )
+      makeTimeout(PROFILE_TIMEOUT_MS),
+    ])
 
-    if (!error) return data
+    if (!error) return data as Profile
 
     // PGRST116 = no row — trigger may not have run yet, create it now
-    if (error.code === 'PGRST116') {
+    if ((error as any).code === 'PGRST116') {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return null
-      const { data: created } = await withTimeout(
+      const { data: created } = await Promise.race([
         supabase
           .from('profiles')
           .upsert({
@@ -56,9 +55,9 @@ async function fetchProfile(supabase: SupabaseClient, userId: string): Promise<P
           })
           .select('*')
           .single(),
-        5000
-      )
-      return created ?? null
+        makeTimeout(PROFILE_TIMEOUT_MS),
+      ])
+      return (created as Profile) ?? null
     }
 
     return null
@@ -77,38 +76,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const [supabase] = useState(() => createClient())
 
-  // Core state update function - single source of truth
-  const updateAuthState = useCallback(async (newSession: Session | null) => {
+  // Core state update — sets user/session immediately, fetches profile in background.
+  // Does NOT block loading state on the profile fetch.
+  const updateAuthState = useCallback((newSession: Session | null) => {
     setSession(newSession)
     setUser(newSession?.user ?? null)
 
-    if (newSession?.user) {
-      const p = await fetchProfile(supabase, newSession.user.id)
-      setProfile(p)
-    } else {
+    if (!newSession?.user) {
       setProfile(null)
+      return
     }
+
+    // Fetch profile in background — loading is already unblocked by the caller
+    fetchProfile(supabase, newSession.user.id).then(p => setProfile(p))
   }, [supabase])
 
   useEffect(() => {
-    // onAuthStateChange is the single source of truth for all auth state
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
+      (event, newSession) => {
         console.log('[Auth] Event:', event, newSession?.user?.email ?? 'no user')
 
-        // Set loading true at start of auth operation (except INITIAL_SESSION which is the first load)
-        if (event !== 'INITIAL_SESSION') {
-          setLoading(true)
-        }
+        if (event !== 'INITIAL_SESSION') setLoading(true)
 
-        try {
-          await updateAuthState(newSession)
-        } catch (err) {
-          console.error('[Auth] updateAuthState error:', err)
-        } finally {
-          // Always unblock loading — even if profile fetch fails or throws
-          setLoading(false)
-        }
+        // updateAuthState is now synchronous — profile fetch runs in background
+        updateAuthState(newSession)
+        setLoading(false)
       }
     )
 
@@ -135,15 +127,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     setLoading(true)
     await supabase.auth.signOut()
-    // SIGNED_OUT event will trigger onAuthStateChange, but we proactively clear state
-    await updateAuthState(null)
+    // SIGNED_OUT event will trigger onAuthStateChange, but proactively clear state
+    updateAuthState(null)
     setLoading(false)
   }
+
+  // Use profile role when loaded; fall back to JWT user_metadata so redirects
+  // work instantly without waiting for the profile fetch to complete.
+  const role: UserRole | null =
+    profile?.role ??
+    (user?.user_metadata?.role as UserRole | undefined) ??
+    null
 
   return (
     <AuthContext.Provider value={{
       user, session, profile, loading,
-      role: profile?.role ?? null,
+      role,
       signIn, signUp, signOut,
     }}>
       {children}
