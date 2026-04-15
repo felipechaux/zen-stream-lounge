@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useCallback, useState } from 'react'
+import { useEffect, useRef, useCallback, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 
 // DB row shape (matches call_requests table)
@@ -24,6 +24,12 @@ export function useStreamerSignaling(streamId: string) {
   const [activeCall, setActiveCall] = useState<CallRequest | null>(null)
   const [ready, setReady]           = useState(false)
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null)
+  const pollRef    = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Merge fetched rows into pending — adds new ones, removes no-longer-pending ones
+  const syncPending = useCallback((rows: CallRequest[]) => {
+    setPending(rows.filter(r => r.status === 'pending'))
+  }, [])
 
   useEffect(() => {
     if (!streamId) return
@@ -31,19 +37,22 @@ export function useStreamerSignaling(streamId: string) {
     setReady(false)
     const supabase = createClient()
 
-    // Fetch any requests that came in before we subscribed
-    supabase
-      .from('call_requests')
-      .select('*')
-      .eq('stream_id', streamId)
-      .eq('status', 'pending')
-      .then(({ data }) => {
-        if (data && data.length > 0) setPending(data as CallRequest[])
-      })
+    const fetchPending = () =>
+      supabase
+        .from('call_requests')
+        .select('*')
+        .eq('stream_id', streamId)
+        .eq('status', 'pending')
+        .then(({ data }) => { if (data) syncPending(data as CallRequest[]) })
+
+    // Immediate fetch on mount
+    fetchPending()
+
+    // Poll every 8 seconds as a fallback for missed Realtime events
+    pollRef.current = setInterval(fetchPending, 8000)
 
     const ch = supabase
       .channel(`streamer-calls:${streamId}`)
-      // New pending requests arriving
       .on(
         'postgres_changes',
         {
@@ -60,7 +69,6 @@ export function useStreamerSignaling(streamId: string) {
           )
         },
       )
-      // Viewer cancels / streamer ends call
       .on(
         'postgres_changes',
         {
@@ -79,15 +87,8 @@ export function useStreamerSignaling(streamId: string) {
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          // Re-sync pending list on (re)connect in case we missed events
-          supabase
-            .from('call_requests')
-            .select('*')
-            .eq('stream_id', streamId)
-            .eq('status', 'pending')
-            .then(({ data }) => {
-              if (data) setPending(data as CallRequest[])
-            })
+          // Re-sync immediately on (re)connect — closes any gap during subscription
+          fetchPending()
         }
         setReady(status === 'SUBSCRIBED')
       })
@@ -96,9 +97,10 @@ export function useStreamerSignaling(streamId: string) {
 
     return () => {
       setReady(false)
+      if (pollRef.current) clearInterval(pollRef.current)
       supabase.removeChannel(ch)
     }
-  }, [streamId])
+  }, [streamId, syncPending])
 
   const accept = useCallback(async (req: CallRequest) => {
     const supabase = createClient()
