@@ -148,7 +148,15 @@ export function useViewerSignaling(
   const [status, setStatus]         = useState<ViewerCallStatus>('idle')
   const [ready, setReady]           = useState(false)
   const requestIdRef                = useRef<string | null>(null)
+  const statusRef                   = useRef<ViewerCallStatus>('idle')
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null)
+  const pollRef    = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Keep statusRef in sync so the poll callback can read current status
+  const applyStatus = useCallback((next: ViewerCallStatus) => {
+    statusRef.current = next
+    setStatus(next)
+  }, [])
 
   useEffect(() => {
     if (!streamId || !viewerId) return
@@ -158,10 +166,31 @@ export function useViewerSignaling(
 
     const applyRow = (row: CallRequest) => {
       if (row.stream_id !== streamId) return
-      if (row.status === 'accepted' || row.status === 'streaming') setStatus('in-call')
-      else if (row.status === 'rejected') setStatus('rejected')
-      else if (row.status === 'ended') setStatus('idle')
+      if (row.status === 'accepted' || row.status === 'streaming') applyStatus('in-call')
+      else if (row.status === 'rejected') applyStatus('rejected')
+      else if (row.status === 'ended') applyStatus('idle')
     }
+
+    const fetchCurrentRow = () =>
+      supabase
+        .from('call_requests')
+        .select('*')
+        .eq('viewer_id', viewerId)
+        .eq('stream_id', streamId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+        .then(({ data }) => {
+          if (data) {
+            requestIdRef.current = requestIdRef.current ?? data.id
+            applyRow(data as CallRequest)
+          }
+        })
+
+    // Poll every 5 seconds while pending — catches missed Realtime UPDATE events
+    pollRef.current = setInterval(() => {
+      if (statusRef.current === 'pending') fetchCurrentRow()
+    }, 5000)
 
     const ch = supabase
       .channel(`viewer-call:${streamId}:${viewerId}`)
@@ -178,18 +207,7 @@ export function useViewerSignaling(
       .subscribe(async (s) => {
         if (s === 'SUBSCRIBED') {
           // Check if our request was already actioned before we connected
-          const { data } = await supabase
-            .from('call_requests')
-            .select('*')
-            .eq('viewer_id', viewerId)
-            .eq('stream_id', streamId)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single()
-          if (data) {
-            requestIdRef.current = requestIdRef.current ?? data.id
-            applyRow(data as CallRequest)
-          }
+          await fetchCurrentRow()
         }
         setReady(s === 'SUBSCRIBED')
       })
@@ -198,9 +216,10 @@ export function useViewerSignaling(
 
     return () => {
       setReady(false)
+      if (pollRef.current) clearInterval(pollRef.current)
       supabase.removeChannel(ch)
     }
-  }, [streamId, viewerId])
+  }, [streamId, viewerId, applyStatus])
 
   const sendRequest = useCallback(async () => {
     if (!ready) return
@@ -232,30 +251,30 @@ export function useViewerSignaling(
     }
 
     requestIdRef.current = data.id
-    setStatus('pending')
-  }, [streamId, viewerId, displayName, ready])
+    applyStatus('pending')
+  }, [streamId, viewerId, displayName, ready, applyStatus])
 
   const cancel = useCallback(async () => {
-    if (!requestIdRef.current) { setStatus('idle'); return }
+    if (!requestIdRef.current) { applyStatus('idle'); return }
     const supabase = createClient()
     await supabase
       .from('call_requests')
       .update({ status: 'ended' })
       .eq('id', requestIdRef.current)
     requestIdRef.current = null
-    setStatus('idle')
-  }, [])
+    applyStatus('idle')
+  }, [applyStatus])
 
   const endCall = useCallback(async () => {
-    if (!requestIdRef.current) { setStatus('idle'); return }
+    if (!requestIdRef.current) { applyStatus('idle'); return }
     const supabase = createClient()
     await supabase
       .from('call_requests')
       .update({ status: 'ended' })
       .eq('id', requestIdRef.current)
     requestIdRef.current = null
-    setStatus('idle')
-  }, [])
+    applyStatus('idle')
+  }, [applyStatus])
 
   return { status, ready, sendRequest, cancel, endCall }
 }
