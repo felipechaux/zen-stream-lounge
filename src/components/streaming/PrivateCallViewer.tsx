@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState, useMemo } from 'react'
-import { Video, VideoOff, PhoneOff, Loader2, Lock, X, LogIn } from 'lucide-react'
+import { Video, VideoOff, PhoneOff, Loader2, Lock, X, LogIn, VolumeX } from 'lucide-react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { useViewerSignaling } from '@/hooks/usePrivateCallSignaling'
@@ -55,6 +55,9 @@ function LocalCallTile({
 function RemoteCallTile({ streamId }: { streamId: string }) {
   const { isConnected, play, stop } = useAntMedia()
   const [started, setStarted] = useState(false)
+  // Start muted so browser allows autoplay; user unmutes via overlay
+  const [muted, setMuted] = useState(true)
+  const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
     if (isConnected && !started) {
@@ -65,15 +68,41 @@ function RemoteCallTile({ streamId }: { streamId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConnected])
 
+  // React's muted prop on <video> is broken — set it via DOM directly
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.muted = muted
+  }, [muted])
+
+  const handleUnmute = () => {
+    setMuted(false)
+    videoRef.current?.play().catch(() => {})
+  }
+
   return (
     <div className="relative aspect-video bg-zinc-900 rounded-2xl overflow-hidden border border-white/[0.07] flex-1 min-w-0">
-      <video id="remoteVideo-priv" autoPlay playsInline className="w-full h-full object-cover" />
+      <video ref={videoRef} id="remoteVideo-priv" autoPlay playsInline className="w-full h-full object-cover" />
+
+      {/* Connecting spinner */}
       {!started && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-zinc-900/80">
           <Loader2 className="h-6 w-6 text-amber-500 animate-spin" />
           <span className="text-zinc-500 text-xs">Connecting to streamer…</span>
         </div>
       )}
+
+      {/* Unmute overlay — browser blocks audio on programmatic autoplay */}
+      {started && muted && (
+        <button
+          onClick={handleUnmute}
+          className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-black/50 hover:bg-black/40 transition-colors"
+        >
+          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white/10 border border-white/20">
+            <VolumeX className="h-5 w-5 text-white" />
+          </div>
+          <span className="text-white text-xs font-semibold drop-shadow">Tap to hear streamer</span>
+        </button>
+      )}
+
       <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded-full text-xs text-white font-medium border border-white/[0.08]">
         <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
         Streamer
