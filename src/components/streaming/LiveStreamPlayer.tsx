@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react';
+import { Volume2, VolumeX } from 'lucide-react';
 
 interface LiveStreamPlayerProps {
   streamId: string;
@@ -17,6 +18,8 @@ const LiveStreamPlayer: React.FC<LiveStreamPlayerProps> = ({ streamId }) => {
   const [status, setStatus] = useState<'loading' | 'playing' | 'error'>('loading');
   const [errorMsg, setErrorMsg] = useState('');
   const [mode, setMode] = useState<'hls' | 'webrtc'>('hls');
+  // Start muted — browsers block autoplay with audio. User unmutes via overlay.
+  const [muted, setMuted] = useState(true);
 
   // ── HLS player ──────────────────────────────────────────
   useEffect(() => {
@@ -160,6 +163,17 @@ const LiveStreamPlayer: React.FC<LiveStreamPlayerProps> = ({ streamId }) => {
     };
   }, [streamId, mode]);
 
+  // React's `muted` prop on <video> is broken — set it via the DOM directly
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.muted = muted;
+  }, [muted]);
+
+  const handleUnmute = () => {
+    setMuted(false);
+    // Some browsers pause on unmute — resume if needed
+    videoRef.current?.play().catch(() => {});
+  };
+
   const handleRetry = () => {
     setStatus('loading');
     setErrorMsg('');
@@ -217,6 +231,30 @@ const LiveStreamPlayer: React.FC<LiveStreamPlayerProps> = ({ streamId }) => {
         </div>
       )}
 
+      {/* Unmute overlay — shown until user interacts (browser autoplay blocks audio) */}
+      {status === 'playing' && muted && (
+        <button
+          onClick={handleUnmute}
+          className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-black/50 backdrop-blur-[2px] transition-opacity hover:bg-black/40 group"
+        >
+          <div className="flex items-center justify-center w-16 h-16 rounded-full bg-white/10 border border-white/20 group-hover:bg-white/20 transition-colors">
+            <VolumeX className="h-7 w-7 text-white" />
+          </div>
+          <span className="text-white text-sm font-semibold drop-shadow">Click to unmute</span>
+        </button>
+      )}
+
+      {/* Mute/unmute toggle (bottom-right, visible when playing and unmuted) */}
+      {status === 'playing' && !muted && (
+        <button
+          onClick={() => setMuted(true)}
+          className="absolute bottom-3 right-3 z-10 flex items-center justify-center w-9 h-9 rounded-full bg-black/60 border border-white/10 hover:bg-black/80 transition-colors"
+          title="Mute"
+        >
+          <Volume2 className="h-4 w-4 text-white" />
+        </button>
+      )}
+
       {/* Video element — used by both HLS and WebRTC */}
       <video
         id="remoteVideo-player"
@@ -225,7 +263,6 @@ const LiveStreamPlayer: React.FC<LiveStreamPlayerProps> = ({ streamId }) => {
         autoPlay
         playsInline
         controls
-        muted={false}
       />
     </div>
   );
