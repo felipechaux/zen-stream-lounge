@@ -59,6 +59,12 @@ export default function AntMediaProvider({
       return;
     }
 
+    if (typeof window !== 'undefined' && !window.isSecureContext) {
+      setError('WebRTC requires HTTPS. Please access this page over HTTPS or via localhost.');
+      console.error('[AntMedia] Page is not in a secure context (requires HTTPS or localhost). WebRTC will not work.');
+      return;
+    }
+
     const initAdaptor = async () => {
       try {
         const iceServersRes = await fetch('/api/ice-servers').then(r => r.json()).catch(() => ({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }));
@@ -144,8 +150,10 @@ export default function AntMediaProvider({
 
               if (videoElement) {
                 try {
+                  // Always mute before programmatic play — browsers block unmuted autoplay.
+                  // Components control unmuting via their own muted state + unmute overlay.
+                  videoElement.muted = true;
                   videoElement.srcObject = streamToAttach;
-                  // Attempt to play just in case autoPlay didn't pick it up immediately
                   videoElement.play().catch(e => console.warn("Auto-play failed", e));
                   setError(null); // Success
                 } catch (e) {
@@ -201,6 +209,10 @@ export default function AntMediaProvider({
               // This happens when the adaptor is idle (no publish/play called yet)
               // or when an empty string was passed — safe to ignore as a warning.
               console.warn("Ant Media: no stream name specified (adaptor idle or empty stream ID)");
+            } else if (errorKey === "UnsecureContext") {
+              const msg = 'WebRTC requires HTTPS. Please access this page over HTTPS or via localhost.';
+              console.error('[AntMedia] UnsecureContext — page must be served over HTTPS or localhost for WebRTC to work.');
+              setError(msg);
             } else {
               setMessages(prev => [...prev, `Error: ${errorKey} - ${message}`]);
               console.error("Ant Media Error:", errorKey, message);

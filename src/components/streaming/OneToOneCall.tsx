@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
-  Video, VideoOff, PhoneOff, Clock, UserCheck, UserX, Wifi, WifiOff,
+  Video, VideoOff, PhoneOff, Clock, UserCheck, UserX, Wifi, WifiOff, VolumeX,
 } from 'lucide-react'
 import { useStreamerSignaling, CallRequest } from '@/hooks/usePrivateCallSignaling'
 import AntMediaProvider, { useAntMedia } from './AntMediaProvider'
@@ -47,6 +47,9 @@ function StreamerLocalTile({ streamId }: { streamId: string }) {
 function ViewerRemoteTile({ streamId, displayName }: { streamId: string; displayName: string }) {
   const { isConnected, play, stop } = useAntMedia()
   const [started, setStarted] = useState(false)
+  // Start muted — browsers block unmuted programmatic autoplay
+  const [muted, setMuted] = useState(true)
+  const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
     if (isConnected && !started) {
@@ -57,15 +60,40 @@ function ViewerRemoteTile({ streamId, displayName }: { streamId: string; display
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConnected])
 
+  // React's muted prop on <video> is broken — set it via DOM directly
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.muted = muted
+  }, [muted])
+
+  const handleUnmute = () => {
+    setMuted(false)
+    videoRef.current?.play().catch(() => {})
+  }
+
   return (
     <div className="relative aspect-video bg-zinc-900 rounded-xl overflow-hidden border border-white/[0.07]">
-      <video id="remoteVideo-p2p" autoPlay playsInline className="w-full h-full object-cover" />
+      <video ref={videoRef} id="remoteVideo-p2p" autoPlay playsInline className="w-full h-full object-cover" />
+
       {!started && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-zinc-900/80">
           <Video className="h-6 w-6 text-zinc-700" />
           <span className="text-zinc-600 text-xs">Connecting…</span>
         </div>
       )}
+
+      {/* Unmute overlay — browser blocks audio on programmatic autoplay */}
+      {started && muted && (
+        <button
+          onClick={handleUnmute}
+          className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-black/50 hover:bg-black/40 transition-colors"
+        >
+          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white/10 border border-white/20">
+            <VolumeX className="h-5 w-5 text-white" />
+          </div>
+          <span className="text-white text-xs font-semibold drop-shadow">Tap to hear viewer</span>
+        </button>
+      )}
+
       <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded-full text-xs text-white border border-white/[0.08]">
         <span className={`w-1.5 h-1.5 rounded-full ${started ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-600'}`} />
         {displayName}
