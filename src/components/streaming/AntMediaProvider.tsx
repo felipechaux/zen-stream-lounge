@@ -150,11 +150,15 @@ export default function AntMediaProvider({
 
               if (videoElement) {
                 try {
-                  // Always mute before programmatic play — browsers block unmuted autoplay.
-                  // Components control unmuting via their own muted state + unmute overlay.
+                  // Preserve the user's muted preference (they may have unmuted before
+                  // the stream arrived). Force mute only to satisfy autoplay policy,
+                  // then restore the original state after play() resolves.
+                  const prevMuted = videoElement.muted;
                   videoElement.muted = true;
                   videoElement.srcObject = streamToAttach;
-                  videoElement.play().catch(e => console.warn("Auto-play failed", e));
+                  videoElement.play()
+                    .then(() => { videoElement.muted = prevMuted; })
+                    .catch(e => { console.warn("Auto-play failed", e); videoElement.muted = prevMuted; });
                   setError(null); // Success
                 } catch (e) {
                   console.error("Failed to set srcObject:", e);
