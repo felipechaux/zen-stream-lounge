@@ -1,4 +1,4 @@
-import { antMediaFetch, AntMediaBroadcast } from '@/lib/ant-media-server'
+import { antMediaFetch, fetchModelStreamIds, AntMediaBroadcast } from '@/lib/ant-media-server'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -7,24 +7,19 @@ const POLL_INTERVAL_MS = 5000
 
 async function fetchLiveStreams(): Promise<{ streams: AntMediaBroadcast[]; count: number }> {
   try {
-    const [listRes, countRes] = await Promise.all([
+    const [listRes, modelIds] = await Promise.all([
       antMediaFetch('/v2/broadcasts/list/0/50'),
-      antMediaFetch('/v2/broadcasts/active-live-stream-count'),
+      fetchModelStreamIds(),
     ])
 
     let streams: AntMediaBroadcast[] = []
-    let count = 0
 
     if (listRes.ok && listRes.text) {
       const all: AntMediaBroadcast[] = JSON.parse(listRes.text)
-      streams = all.filter((b) => b.status === 'broadcasting')
+      streams = all.filter((b) => b.status === 'broadcasting' && modelIds.has(b.streamId))
     }
 
-    count = countRes.ok && countRes.text
-      ? parseInt(countRes.text, 10) || streams.length
-      : streams.length
-
-    return { streams, count }
+    return { streams, count: streams.length }
   } catch {
     return { streams: [], count: 0 }
   }

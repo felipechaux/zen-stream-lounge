@@ -1,5 +1,6 @@
 import https from 'node:https'
 import crypto from 'node:crypto'
+import { createClient } from '@supabase/supabase-js'
 
 export interface AntMediaBroadcast {
   streamId: string
@@ -16,6 +17,36 @@ export interface AntMediaBroadcast {
   category: string
   type: string
   metaData: string
+}
+
+// Cache model stream IDs for 60s — role changes are infrequent, no need to hit
+// Supabase on every 5-second poll cycle.
+let _modelCacheIds: Set<string> = new Set()
+let _modelCacheExpiry = 0
+
+export async function fetchModelStreamIds(): Promise<Set<string>> {
+  const now = Date.now()
+  if (now < _modelCacheExpiry) return _modelCacheIds
+
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+    const { data } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('role', 'model')
+
+    _modelCacheIds = new Set(
+      (data ?? []).map((p: { id: string }) => `host-${p.id.slice(0, 12)}`)
+    )
+  } catch {
+    // On error, return the last known set (or empty on first call)
+  }
+
+  _modelCacheExpiry = now + 60_000
+  return _modelCacheIds
 }
 
 /** Derives the REST base URL from the WebSocket URL in env */
