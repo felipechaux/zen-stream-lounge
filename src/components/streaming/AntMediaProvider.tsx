@@ -111,34 +111,6 @@ export default function AntMediaProvider({
           };
         }
 
-        // Shared retry helper — called from both callback (notification) and
-        // callbackError (error command). Ant Media sends no_stream_exist as a
-        // notification in most versions, so the retry MUST live in callback too.
-        const retryPlay = (streamId: string) => {
-          if (!streamId) return
-          const entry = playRetryRef.current.get(streamId)
-          if (entry !== undefined) {
-            const MAX_RETRIES = 20
-            if (entry.attempt < MAX_RETRIES) {
-              const delay = Math.min(1500 + entry.attempt * 800, 8000)
-              console.warn(`[AntMedia] no_stream_exist for "${streamId}" — retry ${entry.attempt + 1}/${MAX_RETRIES} in ${delay}ms`)
-              if (entry.timer) clearTimeout(entry.timer)
-              entry.timer = setTimeout(() => {
-                if (playRetryRef.current.has(streamId) && adaptorInstanceRef.current) {
-                  entry.attempt++
-                  adaptorInstanceRef.current.play(streamId, '')
-                }
-              }, delay)
-            } else {
-              console.warn(`[AntMedia] Stream "${streamId}" unavailable after ${MAX_RETRIES} retries`)
-              playRetryRef.current.delete(streamId)
-              setError("Stream is offline or does not exist.")
-            }
-          } else {
-            console.warn(`[AntMedia] no_stream_exist for untracked stream "${streamId}" — ignored`)
-          }
-        }
-
         const adaptor = new WebRTCAdaptor({
           websocket_url: url,
           mediaConstraints: mediaConstraints,
@@ -155,15 +127,10 @@ export default function AntMediaProvider({
               setError(null); // Clear errors on fresh init/reconnect
             } else if (info === "play_started") {
               // Stream is playing — cancel any pending retries for it
-              // obj may be {streamId: "..."} or a bare stream ID string depending on AMS version
-              const streamId: string = obj?.streamId ?? (typeof obj === 'string' ? obj : '')
+              const streamId: string = obj?.streamId ?? obj ?? ''
               const entry = playRetryRef.current.get(streamId)
               if (entry?.timer) clearTimeout(entry.timer)
               playRetryRef.current.delete(streamId)
-            } else if (info === "no_stream_exist") {
-              // AMS sends this as a NOTIFICATION (not an error) when the stream
-              // isn't published yet. Retry until the publisher comes online.
-              retryPlay(obj?.streamId ?? '')
             } else if (info === "newStreamAvailable") {
               const videoElement = document.getElementById(remoteVideoId) as HTMLVideoElement;
               console.log("newStreamAvailable event fired. Obj received:", obj);
@@ -205,13 +172,33 @@ export default function AntMediaProvider({
               console.log("Stream finished");
             }
           },
-          callbackError: (errorKey: string, message: any) => {
+          callbackError: (errorKey: string, message: string) => {
             if (errorKey === "no_stream_exist") {
-              // message may be the full notification object or a bare stream ID string
-              // depending on the AMS version — normalise to string either way.
-              const streamId: string =
-                typeof message === 'string' ? message : (message?.streamId ?? '')
-              retryPlay(streamId)
+              // AntMedia passes the stream ID as `message` for this error.
+              // Automatically retry play() so publish/play timing races resolve themselves.
+              const streamId: string = message ?? ''
+              const entry = playRetryRef.current.get(streamId)
+
+              if (entry !== undefined) {
+                const MAX_RETRIES = 15
+                if (entry.attempt < MAX_RETRIES) {
+                  const delay = Math.min(2000 + entry.attempt * 1000, 8000)
+                  console.warn(`[AntMedia] no_stream_exist for "${streamId}" — retry ${entry.attempt + 1}/${MAX_RETRIES} in ${delay}ms`)
+                  if (entry.timer) clearTimeout(entry.timer)
+                  entry.timer = setTimeout(() => {
+                    if (playRetryRef.current.has(streamId) && adaptorInstanceRef.current) {
+                      entry.attempt++
+                      adaptorInstanceRef.current.play(streamId, '')
+                    }
+                  }, delay)
+                } else {
+                  console.warn(`[AntMedia] Stream "${streamId}" unavailable after ${MAX_RETRIES} retries`)
+                  playRetryRef.current.delete(streamId)
+                  setError("Stream is offline or does not exist.")
+                }
+              } else {
+                console.warn(`[AntMedia] no_stream_exist for untracked stream "${streamId}"`)
+              }
             } else if (errorKey === "WebSocketNotConnected") {
               setMessages(prev => [...prev, `Error: Connection lost. Please refresh or try again.`]);
               setIsConnected(false);
