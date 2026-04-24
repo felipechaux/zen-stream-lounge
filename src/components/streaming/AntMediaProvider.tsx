@@ -155,7 +155,8 @@ export default function AntMediaProvider({
               setError(null); // Clear errors on fresh init/reconnect
             } else if (info === "play_started") {
               // Stream is playing — cancel any pending retries for it
-              const streamId: string = obj?.streamId ?? ''
+              // obj may be {streamId: "..."} or a bare stream ID string depending on AMS version
+              const streamId: string = obj?.streamId ?? (typeof obj === 'string' ? obj : '')
               const entry = playRetryRef.current.get(streamId)
               if (entry?.timer) clearTimeout(entry.timer)
               playRetryRef.current.delete(streamId)
