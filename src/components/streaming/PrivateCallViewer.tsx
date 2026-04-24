@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState, useMemo } from 'react'
-import { Video, VideoOff, PhoneOff, Loader2, Lock, X, LogIn, VolumeX } from 'lucide-react'
+import { Video, VideoOff, PhoneOff, Loader2, Lock, X, LogIn, VolumeX, Volume2 } from 'lucide-react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { useViewerSignaling } from '@/hooks/usePrivateCallSignaling'
@@ -103,6 +103,17 @@ function RemoteCallTile({ streamId }: { streamId: string }) {
         </button>
       )}
 
+      {/* Persistent mute toggle — visible after initial unmute */}
+      {started && !muted && (
+        <button
+          onClick={() => setMuted(true)}
+          className="absolute bottom-2 right-2 z-10 flex items-center justify-center w-8 h-8 rounded-full bg-black/60 border border-white/10 hover:bg-black/80 transition-colors"
+          title="Mute"
+        >
+          <Volume2 className="h-3.5 w-3.5 text-white" />
+        </button>
+      )}
+
       <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded-full text-xs text-white font-medium border border-white/[0.08]">
         <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
         Streamer
@@ -114,9 +125,10 @@ function RemoteCallTile({ streamId }: { streamId: string }) {
 // ── Main component ────────────────────────────────────────────────────────────
 interface PrivateCallViewerProps {
   streamId: string // the streamer's broadcast stream ID (from URL param)
+  onCallActive?: (active: boolean) => void
 }
 
-export default function PrivateCallViewer({ streamId }: PrivateCallViewerProps) {
+export default function PrivateCallViewer({ streamId, onCallActive }: PrivateCallViewerProps) {
   const { user, profile } = useAuth()
 
   const viewerId = useMemo(
@@ -132,6 +144,10 @@ export default function PrivateCallViewer({ streamId }: PrivateCallViewerProps) 
     viewerId,
     displayName,
   )
+
+  useEffect(() => {
+    onCallActive?.(status === 'in-call')
+  }, [status, onCallActive])
 
   // WebRTC stream IDs — both sides derive these from the same streamId + viewerId
   const hostStreamId   = `priv-${streamId}-host`

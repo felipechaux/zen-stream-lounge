@@ -21,6 +21,7 @@ function AntMediaContent() {
 
     const streamIdParam = searchParams.get('id');
     const modeParam     = searchParams.get('mode');
+    const [callActive, setCallActive] = useState(false);
 
     // Viewer arriving from homepage stream card
     const isViewerMode = modeParam === 'play' && !!streamIdParam;
@@ -55,8 +56,8 @@ function AntMediaContent() {
                     </div>
                 </div>
                 <div className="max-w-6xl mx-auto px-4 py-8">
-                    <LiveStreamPlayer streamId={streamIdParam!} />
-                    <PrivateCallViewer streamId={streamIdParam!} />
+                    {!callActive && <LiveStreamPlayer streamId={streamIdParam!} />}
+                    <PrivateCallViewer streamId={streamIdParam!} onCallActive={setCallActive} />
                 </div>
             </div>
         );
