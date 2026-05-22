@@ -149,6 +149,12 @@ export default function PrivateCallViewer({ streamId, onCallActive }: PrivateCal
     onCallActive?.(status === 'in-call')
   }, [status, onCallActive])
 
+  // Auto-end when streamer disappears (their tab closed / network dropped)
+  const handleStreamerGone = React.useCallback(() => {
+    console.log('[PrivateCallViewer] Streamer peer disconnected — ending call')
+    endCall()
+  }, [endCall])
+
   // WebRTC stream IDs — both sides derive these from the same streamId + viewerId
   const hostStreamId   = `priv-${streamId}-host`
   const viewerStreamId = `priv-${streamId}-viewer-${viewerId}`
@@ -258,7 +264,7 @@ export default function PrivateCallViewer({ streamId, onCallActive }: PrivateCal
         <AntMediaProvider role="publisher" localVideoId="localVideo-priv">
           <LocalCallTile streamId={viewerStreamId} onReady={() => {}} />
         </AntMediaProvider>
-        <AntMediaProvider role="player" remoteVideoId="remoteVideo-priv">
+        <AntMediaProvider role="player" remoteVideoId="remoteVideo-priv" onPeerDisconnect={handleStreamerGone}>
           <RemoteCallTile streamId={hostStreamId} />
         </AntMediaProvider>
       </div>

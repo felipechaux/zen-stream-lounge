@@ -29,6 +29,10 @@ interface AntMediaProviderProps {
   role?: 'publisher' | 'player' | 'p2p';
   localVideoId?: string;  // DOM element ID for local camera preview (default: 'localVideo')
   remoteVideoId?: string; // DOM element ID for remote stream (default: 'remoteVideo')
+  // Fired when the remote peer disappears (play_finished from server, or ICE
+  // state goes to failed/closed/long-disconnected). UI layer should react by
+  // ending the call so the row in the DB is closed for the other side too.
+  onPeerDisconnect?: (streamId: string) => void;
 }
 
 export default function AntMediaProvider({
@@ -37,6 +41,7 @@ export default function AntMediaProvider({
   role = 'publisher',
   localVideoId = 'localVideo',
   remoteVideoId = 'remoteVideo',
+  onPeerDisconnect,
 }: AntMediaProviderProps) {
   const [webRTCAdaptor, setWebRTCAdaptor] = useState<any>(null);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -49,6 +54,22 @@ export default function AntMediaProvider({
   const adaptorInstanceRef = useRef<any>(null);
   // Tracks streams being played so we can retry on no_stream_exist
   const playRetryRef = useRef<Map<string, { attempt: number; timer: ReturnType<typeof setTimeout> | null }>>(new Map());
+  // Latest peer-disconnect handler (refed so the effect doesn't re-init on change)
+  const onPeerDisconnectRef = useRef<((streamId: string) => void) | undefined>(onPeerDisconnect);
+  useEffect(() => { onPeerDisconnectRef.current = onPeerDisconnect }, [onPeerDisconnect]);
+  // Per-stream disconnect bookkeeping: debounce 'disconnected' state and ensure
+  // we fire onPeerDisconnect at most once per stream.
+  const disconnectStateRef = useRef<Map<string, { timer: ReturnType<typeof setTimeout> | null; fired: boolean }>>(new Map());
+
+  const firePeerDisconnect = useCallback((streamId: string) => {
+    if (!streamId) return;
+    const entry = disconnectStateRef.current.get(streamId) ?? { timer: null, fired: false };
+    if (entry.fired) return;
+    entry.fired = true;
+    if (entry.timer) { clearTimeout(entry.timer); entry.timer = null; }
+    disconnectStateRef.current.set(streamId, entry);
+    try { onPeerDisconnectRef.current?.(streamId); } catch (e) { console.warn('[AntMedia] onPeerDisconnect threw', e); }
+  }, []);
 
   useEffect(() => {
     // Determine the URL
@@ -168,8 +189,27 @@ export default function AntMediaProvider({
               setIsConnected(false);
               setIsInitialized(false);
             } else if (info === "play_finished") {
-              // Stream ended remotely
-              console.log("Stream finished");
+              // Server told us the remote publisher stopped — peer is gone.
+              const sid: string = obj?.streamId ?? obj ?? ''
+              console.log("Stream finished", sid);
+              firePeerDisconnect(sid);
+            } else if (info === "ice_connection_state_changed") {
+              const sid: string = obj?.streamId ?? ''
+              const state: string = obj?.state ?? ''
+              if (!sid) return;
+              const entry = disconnectStateRef.current.get(sid) ?? { timer: null, fired: false };
+              if (state === 'failed' || state === 'closed') {
+                firePeerDisconnect(sid);
+              } else if (state === 'disconnected') {
+                // Transient — give the adaptor a chance to reconnect, then give up.
+                if (entry.timer) clearTimeout(entry.timer);
+                entry.timer = setTimeout(() => firePeerDisconnect(sid), 6000);
+                disconnectStateRef.current.set(sid, entry);
+              } else if (state === 'connected' || state === 'completed') {
+                // Recovered — cancel any pending disconnect timer.
+                if (entry.timer) { clearTimeout(entry.timer); entry.timer = null; }
+                disconnectStateRef.current.set(sid, entry);
+              }
             }
           },
           callbackError: (errorKey: string, message: string) => {
@@ -243,6 +283,9 @@ export default function AntMediaProvider({
       // Cancel all pending play retries
       playRetryRef.current.forEach(entry => { if (entry.timer) clearTimeout(entry.timer) })
       playRetryRef.current.clear()
+      // Cancel any pending disconnect debounce timers
+      disconnectStateRef.current.forEach(entry => { if (entry.timer) clearTimeout(entry.timer) })
+      disconnectStateRef.current.clear()
 
       if (adaptorInstanceRef.current) {
         try {
@@ -279,6 +322,10 @@ export default function AntMediaProvider({
     if (webRTCAdaptor && isInitialized) {
       // Register for auto-retry on no_stream_exist
       playRetryRef.current.set(streamId, { attempt: 0, timer: null })
+      // Reset any previous disconnect state for this stream ID
+      const prev = disconnectStateRef.current.get(streamId)
+      if (prev?.timer) clearTimeout(prev.timer)
+      disconnectStateRef.current.set(streamId, { timer: null, fired: false })
       webRTCAdaptor.play(streamId, "");
     } else {
       console.warn("WebRTCAdaptor not ready to play");
@@ -286,10 +333,13 @@ export default function AntMediaProvider({
   }, [webRTCAdaptor, isInitialized]);
 
   const stop = useCallback((streamId: string) => {
-    // Cancel any pending retry for this stream
-    const entry = playRetryRef.current.get(streamId)
-    if (entry?.timer) clearTimeout(entry.timer)
+    // Cancel any pending retry / disconnect timer for this stream
+    const retry = playRetryRef.current.get(streamId)
+    if (retry?.timer) clearTimeout(retry.timer)
     playRetryRef.current.delete(streamId)
+    const disc = disconnectStateRef.current.get(streamId)
+    if (disc?.timer) clearTimeout(disc.timer)
+    disconnectStateRef.current.delete(streamId)
 
     if (webRTCAdaptor && isInitialized) {
       webRTCAdaptor.stop(streamId);

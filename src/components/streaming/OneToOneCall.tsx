@@ -157,6 +157,12 @@ export default function OneToOneCall({ streamId }: OneToOneCallProps) {
   const hostStreamId   = `priv-${streamId}-host`
   const viewerStreamId = activeCall ? `priv-${streamId}-viewer-${activeCall.viewer_id}` : ''
 
+  // Auto-end when the viewer's stream disappears (their tab closed / network dropped)
+  const handleViewerGone = React.useCallback(() => {
+    console.log('[OneToOneCall] Viewer peer disconnected — ending call')
+    endCall()
+  }, [endCall])
+
   // ── Active call ───────────────────────────────────────────────────────────
   if (activeCall) {
     return (
@@ -184,7 +190,7 @@ export default function OneToOneCall({ streamId }: OneToOneCallProps) {
 
         {/* Stacked video tiles — viewer on top (bigger), streamer below (smaller) */}
         <div className="p-3 space-y-2">
-          <AntMediaProvider role="player" remoteVideoId="remoteVideo-p2p">
+          <AntMediaProvider role="player" remoteVideoId="remoteVideo-p2p" onPeerDisconnect={handleViewerGone}>
             <ViewerRemoteTile streamId={viewerStreamId} displayName={activeCall.viewer_name} />
           </AntMediaProvider>
           <AntMediaProvider role="publisher" localVideoId="localVideo-p2p">
