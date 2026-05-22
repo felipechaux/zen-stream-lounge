@@ -9,6 +9,7 @@ import AntMediaProvider from '@/components/streaming/AntMediaProvider';
 import OneToOneCall from '@/components/streaming/OneToOneCall';
 import Broadcaster from '@/components/streaming/Broadcaster';
 import PrivateCallViewer from '@/components/streaming/PrivateCallViewer';
+import LiveChat from '@/components/streaming/LiveChat';
 import dynamic from 'next/dynamic';
 const LiveStreamPlayer = dynamic(() => import('@/components/streaming/LiveStreamPlayer'), { ssr: false });
 
@@ -56,8 +57,15 @@ function AntMediaContent() {
                     </div>
                 </div>
                 <div className="max-w-6xl mx-auto px-4 py-8">
-                    {!callActive && <LiveStreamPlayer streamId={streamIdParam!} />}
-                    <PrivateCallViewer streamId={streamIdParam!} onCallActive={setCallActive} />
+                    <div className="flex flex-col lg:flex-row gap-5 items-start">
+                        <div className="w-full lg:flex-1 min-w-0">
+                            {!callActive && <LiveStreamPlayer streamId={streamIdParam!} />}
+                            <PrivateCallViewer streamId={streamIdParam!} onCallActive={setCallActive} />
+                        </div>
+                        <div className="w-full lg:w-80 lg:flex-shrink-0">
+                            <LiveChat streamId={streamIdParam!} className="h-[560px]" />
+                        </div>
+                    </div>
                 </div>
             </div>
         );
@@ -126,10 +134,11 @@ function AntMediaContent() {
                         )}
                     </div>
 
-                    {/* ── Right: Private call panel ─────────────────────────── */}
+                    {/* ── Right: Private call panel + Live chat ─────────────── */}
                     {streamerStreamId && (
-                        <div className="w-full lg:w-80 lg:flex-shrink-0">
+                        <div className="w-full lg:w-80 lg:flex-shrink-0 space-y-4">
                             <OneToOneCall streamId={streamerStreamId} />
+                            <LiveChat streamId={streamerStreamId} className="h-[500px]" />
                         </div>
                     )}
                 </div>
